@@ -1,0 +1,2 @@
+# Core AMG requirements
+# No external dependencies for core library (intentionally minimal)
