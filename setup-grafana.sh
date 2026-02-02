@@ -15,6 +15,7 @@ EMAIL="ugen@qbnox.com"
 GRAFANA_USER="admin"
 GRAFANA_PASS="admin"
 API_KEY="sk-admin-key-grafana"
+GRAFANA_PORT="3100"  # Using port 3100 (port 3000 may be in use)
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║  🔧 Grafana Setup for ${SUBDOMAIN}              ║${NC}"
@@ -64,7 +65,7 @@ echo "  Starting Grafana container..."
 sudo docker run -d \
   --name grafana \
   --restart=unless-stopped \
-  -p 127.0.0.1:3000:3000 \
+  -p 127.0.0.1:${GRAFANA_PORT}:3000 \
   -e GF_SECURITY_ADMIN_PASSWORD="$GRAFANA_PASS" \
   -e GF_USERS_ALLOW_SIGN_UP=false \
   -e GF_INSTALL_PLUGINS=grafana-http-api-datasource \
@@ -73,8 +74,8 @@ sudo docker run -d \
 sleep 5
 
 # Verify Grafana is responding
-if curl -s http://127.0.0.1:3000/api/health 2>/dev/null | jq -e '.status == "ok"' >/dev/null 2>&1; then
-    echo -e "${GREEN}✓ Grafana running on localhost:3000${NC}"
+if curl -s http://127.0.0.1:${GRAFANA_PORT}/api/health 2>/dev/null | jq -e '.status == "ok"' >/dev/null 2>&1; then
+    echo -e "${GREEN}✓ Grafana running on localhost:${GRAFANA_PORT}${NC}"
 else
     echo -e "${RED}✗ Grafana not responding${NC}"
     exit 1
@@ -125,7 +126,7 @@ server {
     
     # Proxy to Grafana
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3100;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -197,8 +198,8 @@ echo -e "${BLUE}Verification Results:${NC}"
 echo -e "─────────────────────────────────────────────────────────────"
 
 # Check 1: Grafana API responding
-if curl -s http://127.0.0.1:3000/api/health 2>/dev/null | jq -e '.status == "ok"' >/dev/null 2>&1; then
-    echo -e "${GREEN}✓${NC} Grafana API responding (localhost:3000)"
+if curl -s http://127.0.0.1:${GRAFANA_PORT}/api/health 2>/dev/null | jq -e '.status == "ok"' >/dev/null 2>&1; then
+    echo -e "${GREEN}✓${NC} Grafana API responding (localhost:${GRAFANA_PORT})"
 else
     echo -e "${RED}✗${NC} Grafana API not responding"
 fi
