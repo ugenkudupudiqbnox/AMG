@@ -4,14 +4,11 @@
 
 # Agent Memory Governance (AMG) 
 
-<!-- Project Status & Quality -->
 [![Unit Tests](https://github.com/ugenkudupudiqbnox/AMG/actions/workflows/ci.yml/badge.svg)](https://github.com/ugenkudupudiqbnox/AMG/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-early--development-orange)](#project-status)
-<!-- Governance & Security -->
 [![Security Policy](https://img.shields.io/badge/security-policy-important)](SECURITY.md)
 [![Governance](https://img.shields.io/badge/governance-conservative-blueviolet)](GOVERNANCE_MODEL.md)
-<!-- Community -->
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white)](https://discord.gg/qPmpZdNYAC)
 
 > Governance before intelligence. Control before autonomy.
