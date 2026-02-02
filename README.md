@@ -21,6 +21,62 @@ Governance before intelligence. Control before autonomy.
 
 ---
 
+## 📁 Project Structure
+
+```
+AMG/
+├── README.md                          # This file
+├── CONTRIBUTING.md                    # Contribution guidelines
+├── SECURITY.md                        # Security policy
+├── CODE_OF_CONDUCT.md                 # Community standards
+├── pyproject.toml                     # Python project config
+├── requirements.txt                   # Python dependencies
+├── run_api.py                         # AMG API server
+│
+├── src/                               # Source code
+│   └── amg/                           # Main package
+│       ├── adapters/                  # Storage & framework adapters
+│       ├── api/                       # HTTP API endpoints
+│       └── ...                        # Core modules
+│
+├── tests/                             # Test suite
+│
+├── docs/                              # Complete documentation
+│   ├── INDEX.md                       # Documentation hub
+│   ├── architecture/                  # System design
+│   ├── governance/                    # Policies & governance
+│   ├── deployment/                    # Infrastructure guides
+│   ├── dashboards/                    # Grafana setup
+│   ├── guides/                        # Operator documentation
+│   └── phases/                        # Historical phases
+│
+├── scripts/                           # Automation scripts
+│   ├── setup-https.sh                # HTTPS setup script
+│   └── setup-grafana.sh              # Grafana setup script
+│
+├── config/                            # Configuration files
+│   └── amg-api-https.conf            # Nginx HTTPS config
+│
+└── amg-api.service                    # Systemd service file
+```
+
+---
+
+## 🚀 Quick Start
+
+### Getting Started
+1. **Read**: [README.md](./README.md) (this file)
+2. **Learn**: [docs/INDEX.md](./docs/INDEX.md) - Full documentation hub
+3. **Deploy**: [docs/deployment/](./docs/deployment/) - Setup guides
+4. **Monitor**: [docs/dashboards/](./docs/dashboards/) - Grafana setup
+
+### File Locations
+- **Setup Scripts**: `scripts/` - Run deployment automation
+- **Configuration**: `config/` - Nginx and deployment configs
+- **Documentation**: `docs/` - Organized by purpose
+
+---
+
 ## Why This Project Exists
 
 AI agents are no longer simple chatbots.

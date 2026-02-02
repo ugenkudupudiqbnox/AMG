@@ -369,11 +369,11 @@ No manual intervention required.
 
 ## Support
 
-- **Nginx Configuration**: See `amg-api-https.conf`
-- **Setup Script**: `setup-https.sh`
-- **Documentation**: `HTTPS_SETUP.md`
-- **API Reference**: `PHASE_5_HTTP_API.md`
-- **Deployment Guide**: `API_AUTHENTICATION_DEPLOYMENT.md`
+- **Nginx Configuration**: See `config/amg-api-https.conf`
+- **Setup Script**: `scripts/setup-https.sh`
+- **Documentation**: `docs/deployment/HTTPS_SETUP.md`
+- **API Reference**: `docs/phases/PHASE_5_HTTP_API.md`
+- **Deployment Guide**: `docs/deployment/API_AUTHENTICATION_DEPLOYMENT.md`
 
 ---
 
