@@ -17,6 +17,7 @@ from amg.errors import (
     AgentDisabledError,
     MemoryNotFoundError,
 )
+from amg.api.auth import verify_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +164,7 @@ def create_app():
         request: MemoryWriteRequest,
         storage=Depends(get_storage),
         kill_switch=Depends(get_kill_switch),
+        authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Write memory with governance enforcement."""
         try:
@@ -232,6 +234,7 @@ def create_app():
     def query_memory(
         request: MemoryQueryRequest,
         storage=Depends(get_storage),
+        authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Query memories with governance enforcement."""
         try:
@@ -290,6 +293,7 @@ def create_app():
     def build_context(
         request: ContextBuildRequest,
         context_builder=Depends(get_context_builder),
+        authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Build governed context for agent."""
         try:
@@ -346,6 +350,7 @@ def create_app():
     def get_audit_log(
         request_id: str,
         storage=Depends(get_storage),
+        authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Retrieve audit log for request."""
         try:
@@ -393,6 +398,7 @@ def create_app():
         reason: str = "No reason provided",
         actor_id: str = "api",
         kill_switch=Depends(get_kill_switch),
+        authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Disable an agent (kill switch)."""
         try:
@@ -420,6 +426,7 @@ def create_app():
         reason: str = "No reason provided",
         actor_id: str = "api",
         kill_switch=Depends(get_kill_switch),
+        authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Freeze memory writes for agent (read-only mode)."""
         try:
@@ -445,6 +452,7 @@ def create_app():
     def get_agent_status(
         agent_id: str,
         kill_switch=Depends(get_kill_switch),
+        authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Get agent governance status."""
         try:

@@ -1,11 +1,23 @@
 """Tests for HTTP API layer."""
 
 import pytest
+import os
 from fastapi.testclient import TestClient
 from datetime import datetime
 
 from amg.api.server import create_app
 from amg.types import MemoryType, Sensitivity, Scope
+
+
+@pytest.fixture(autouse=True)
+def disable_auth(monkeypatch):
+    """Disable authentication for API tests."""
+    monkeypatch.setenv("AMG_AUTH_DISABLED", "true")
+    # Reset global auth config
+    import amg.api.auth as auth_module
+    auth_module._auth_config = None
+    yield
+    auth_module._auth_config = None
 
 
 @pytest.fixture
