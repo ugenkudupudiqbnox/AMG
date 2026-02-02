@@ -1,0 +1,40 @@
+services:
+  keycloak-db:
+    image: postgres:15
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password123#
+    networks:
+      - keycloak_network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password123#
+      KC_HOSTNAME: iam.soc.qbnox.com
+      # For Keycloak 25+ / 26+
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin_password123#
+    ports:
+      - "8081:8080"
+    depends_on:
+      - keycloak-db
+    networks:
+      - keycloak_network
+
+networks:
+  keycloak_network:
+    driver: bridge
+
+volumes:
+  keycloak_db_data:
