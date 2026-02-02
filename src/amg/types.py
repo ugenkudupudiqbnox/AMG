@@ -63,12 +63,12 @@ class Memory:
         scope=Scope.AGENT
     ))
     created_at: datetime = field(default_factory=datetime.utcnow)
-    expires_at: datetime = field(default_factory=lambda: datetime.utcnow())
+    expires_at: Optional[datetime] = None
     created_by: str = "agent"       # Request ID or actor that created this
     
     def __post_init__(self):
         """Calculate expiration time based on policy."""
-        if self.expires_at == datetime.utcnow():  # Default value check
+        if self.expires_at is None:  # Only set if not provided
             from datetime import timedelta
             self.expires_at = self.created_at + timedelta(seconds=self.policy.ttl_seconds)
     
