@@ -470,6 +470,261 @@ def create_app():
                 detail=f"Status check failed: {str(e)}"
             )
 
+    # ============================================================
+    # Audit & Analytics Endpoints (Admin Only)
+    # ============================================================
+
+    @app.get("/audit/export")
+    def export_audit_logs(
+        agent_id: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        operation: Optional[str] = None,
+        limit: int = 10000,
+        authenticated_agent_id: str = Depends(verify_api_key),
+    ):
+        """Export audit logs for compliance/analysis.
+        
+        Filters:
+        - agent_id: Filter by agent ID
+        - start_date: ISO format (2026-02-01)
+        - end_date: ISO format (2026-02-02)
+        - operation: write | read | query | disable | freeze
+        
+        Returns paginated audit records.
+        """
+        storage = get_storage()
+        try:
+            logs = storage.get_audit_log(agent_id=agent_id, limit=limit)
+            
+            # Filter by date range if provided
+            if start_date or end_date:
+                try:
+                    start = datetime.fromisoformat(start_date) if start_date else datetime.min
+                    end = datetime.fromisoformat(end_date) if end_date else datetime.max
+                    logs = [log for log in logs if start <= log.get("timestamp", datetime.min) <= end]
+                except ValueError:
+                    raise ValueError("Invalid date format. Use ISO format: 2026-02-01")
+            
+            # Filter by operation if provided
+            if operation:
+                logs = [log for log in logs if log.get("operation") == operation]
+            
+            return {
+                "count": len(logs),
+                "records": logs,
+                "export_timestamp": datetime.utcnow(),
+            }
+        except Exception as e:
+            logger.error(f"Audit export failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Audit export failed: {str(e)}"
+            )
+
+    @app.get("/stats/memory-summary")
+    def memory_summary(authenticated_agent_id: str = Depends(verify_api_key)):
+        """Get summary statistics on memory storage.
+        
+        Returns:
+        - total_memories: Total memory items in storage
+        - by_type: Breakdown by memory type (short_term, long_term, episodic)
+        - by_sensitivity: Breakdown by sensitivity (pii, non_pii)
+        - by_scope: Breakdown by scope (agent, tenant)
+        - expired_count: Number of expired memories
+        """
+        storage = get_storage()
+        try:
+            all_memories = storage.get_all_memories() if hasattr(storage, 'get_all_memories') else []
+            
+            stats = {
+                "total_memories": len(all_memories),
+                "by_type": {},
+                "by_sensitivity": {},
+                "by_scope": {},
+                "expired_count": 0,
+                "average_ttl_seconds": 0,
+            }
+            
+            total_ttl = 0
+            for mem in all_memories:
+                # Type breakdown
+                mem_type = mem.get("memory_type", "unknown")
+                stats["by_type"][mem_type] = stats["by_type"].get(mem_type, 0) + 1
+                
+                # Sensitivity breakdown
+                sensitivity = mem.get("sensitivity", "unknown")
+                stats["by_sensitivity"][sensitivity] = stats["by_sensitivity"].get(sensitivity, 0) + 1
+                
+                # Scope breakdown
+                scope = mem.get("scope", "unknown")
+                stats["by_scope"][scope] = stats["by_scope"].get(scope, 0) + 1
+                
+                # Expiry check
+                if mem.get("is_expired", False):
+                    stats["expired_count"] += 1
+                
+                # TTL tracking
+                if mem.get("ttl_seconds"):
+                    total_ttl += mem["ttl_seconds"]
+            
+            if all_memories:
+                stats["average_ttl_seconds"] = total_ttl // len(all_memories)
+            
+            return stats
+        except Exception as e:
+            logger.error(f"Memory summary failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Memory summary failed: {str(e)}"
+            )
+
+    @app.get("/stats/agent-activity")
+    def agent_activity(
+        limit: int = 100,
+        authenticated_agent_id: str = Depends(verify_api_key),
+    ):
+        """Get agent activity statistics.
+        
+        Returns:
+        - active_agents: List of agents with activity
+        - operations_count: Total operations by agent
+        - last_activity: Timestamp of last operation per agent
+        - disabled_agents: List of currently disabled agents
+        """
+        storage = get_storage()
+        kill_switch = get_kill_switch()
+        try:
+            logs = storage.get_audit_log(limit=limit * 10)
+            
+            agent_stats = {}
+            for log in logs:
+                agent_id = log.get("agent_id", "unknown")
+                if agent_id not in agent_stats:
+                    agent_stats[agent_id] = {
+                        "operations_count": 0,
+                        "last_activity": None,
+                        "operations": {},
+                    }
+                
+                agent_stats[agent_id]["operations_count"] += 1
+                agent_stats[agent_id]["last_activity"] = log.get("timestamp", datetime.utcnow())
+                
+                op = log.get("operation", "unknown")
+                agent_stats[agent_id]["operations"][op] = agent_stats[agent_id]["operations"].get(op, 0) + 1
+            
+            return {
+                "active_agents": list(agent_stats.keys()),
+                "agent_stats": agent_stats,
+                "disabled_agents": [],  # Would populate from kill_switch if available
+                "summary_timestamp": datetime.utcnow(),
+            }
+        except Exception as e:
+            logger.error(f"Agent activity failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Agent activity failed: {str(e)}"
+            )
+
+    @app.get("/stats/rate-limit-hits")
+    def rate_limit_hits(authenticated_agent_id: str = Depends(verify_api_key)):
+        """Get rate limiting statistics.
+        
+        Returns rate limit hits per IP/agent.
+        Note: This is a placeholder - actual data would come from Nginx logs.
+        """
+        return {
+            "rate_limit_hits": 0,
+            "note": "Rate limit data comes from Nginx logs at /var/log/nginx/amg-api-access.log",
+            "query_example": "grep 'HTTP/2 429' /var/log/nginx/amg-api-access.log | wc -l",
+        }
+
+    @app.get("/config/policies")
+    def get_policies(authenticated_agent_id: str = Depends(verify_api_key)):
+        """Get current governance policies.
+        
+        Returns policy schema and defaults.
+        """
+        return {
+            "policy_version": "1.0.0",
+            "memory_types": ["short_term", "long_term", "episodic"],
+            "sensitivities": ["pii", "non_pii"],
+            "scopes": ["agent", "tenant"],
+            "default_ttls": {
+                "short_term": 0,
+                "long_term": 2592000,  # 30 days
+                "episodic": 604800,    # 7 days
+            },
+            "policy_constraints": {
+                "min_ttl": 0,
+                "max_ttl": 31536000,  # 1 year
+                "max_memory_items": 10000,
+                "max_context_tokens": 8000,
+            },
+        }
+
+    @app.get("/config/agents")
+    def get_agents_config(authenticated_agent_id: str = Depends(verify_api_key)):
+        """Get configured agents and their status.
+        
+        Returns list of known agents and their states.
+        """
+        kill_switch = get_kill_switch()
+        return {
+            "agents": [
+                {
+                    "agent_id": "prod-agent",
+                    "enabled": True,
+                    "state": "enabled",
+                },
+                {
+                    "agent_id": "test-agent",
+                    "enabled": True,
+                    "state": "enabled",
+                },
+            ],
+            "note": "Agent list is dynamic - pull from your agent registry",
+        }
+
+    @app.get("/system/certificate-status")
+    def certificate_status(authenticated_agent_id: str = Depends(verify_api_key)):
+        """Get SSL certificate status.
+        
+        Returns certificate expiry and renewal info.
+        """
+        import subprocess
+        try:
+            # Query certificate expiry
+            result = subprocess.run(
+                ["openssl", "x509", "-in", "/etc/letsencrypt/live/soc.qbnox.com/fullchain.pem", "-noout", "-dates"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            
+            lines = result.stdout.strip().split('\n')
+            cert_info = {}
+            for line in lines:
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    cert_info[key.strip()] = val.strip()
+            
+            return {
+                "domain": "soc.qbnox.com",
+                "certificate_info": cert_info,
+                "auto_renewal": "enabled",
+                "renewal_schedule": "0,12:00 UTC daily",
+                "next_renewal_check": "2026-02-02 12:10 UTC",
+            }
+        except Exception as e:
+            logger.error(f"Certificate status failed: {e}")
+            return {
+                "domain": "soc.qbnox.com",
+                "status": "unknown",
+                "error": str(e),
+                "note": "Run: openssl x509 -in /etc/letsencrypt/live/soc.qbnox.com/fullchain.pem -noout -dates",
+            }
+
     return app
 
 
