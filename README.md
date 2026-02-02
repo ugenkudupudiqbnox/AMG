@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/images/header.png" alt="ai-governor" style="width:600px"/>
+  <img src="docs/assets/images/header.png" alt="Agent Memory Governance" style="width:600px"/>
 </p>
 
 # Agent Memory Governance (AMG) 
