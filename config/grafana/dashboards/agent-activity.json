@@ -4,7 +4,55 @@
   "panels": [
     {
       "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [ "lastNotNull" ],
+          "fields": "",
+          "values": true
+        },
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/stats/agent-activity",
+          "urlPath": "/stats/agent-activity",
+          "queryType": "json",
+          "jsonPath": "$",
+          "fields": [
+            { "name": "Total Operations", "jsonPath": "$.summary.total_operations" },
+            { "name": "Unique Agents", "jsonPath": "$.summary.unique_agents" },
+            { "name": "Avg Ops/Agent", "jsonPath": "$.summary.avg_ops_per_agent" },
+            { "name": "Last 24h", "jsonPath": "$.summary.ops_last_24h" }
+          ]
+        }
+      ],
+      "title": "Overall Activity Summary",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 4 },
       "id": 1,
       "options": {
         "showHeader": true
@@ -30,7 +78,7 @@
     },
     {
       "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
       "id": 2,
       "options": {
         "displayMode": "basic",
@@ -61,7 +109,7 @@
     },
     {
       "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
       "id": 3,
       "options": {
         "showHeader": true

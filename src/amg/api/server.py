@@ -3,7 +3,7 @@
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends, status
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import uuid4
 import logging
 
@@ -777,16 +777,36 @@ def create_app():
             # Format for Grafana
             agent_list = []
             op_totals = {}
+            total_operations = 0
+            ops_last_24h = 0
+            cutoff_24h = datetime.utcnow() - timedelta(hours=24)
+            
             for agent_id, data in agent_stats.items():
                 agent_list.append({
                     "agent_id": agent_id,
                     "operations_count": data["operations_count"],
                     "last_activity": data["last_activity"].isoformat() if data["last_activity"] else None
                 })
+                total_operations += data["operations_count"]
                 for op, count in data["operations"].items():
                     op_totals[op] = op_totals.get(op, 0) + count
+
+            # Count ops in last 24h from raw logs
+            for log in logs:
+                log_ts = log.timestamp if hasattr(log, "timestamp") else None
+                if log_ts and log_ts > cutoff_24h:
+                    ops_last_24h += 1
+            
+            unique_agents = len(agent_stats)
+            avg_ops = total_operations / unique_agents if unique_agents > 0 else 0
             
             return {
+                "summary": {
+                    "total_operations": total_operations,
+                    "unique_agents": unique_agents,
+                    "avg_ops_per_agent": round(avg_ops, 1),
+                    "ops_last_24h": ops_last_24h
+                },
                 "agent_summaries": sorted(agent_list, key=lambda x: x["operations_count"], reverse=True),
                 "operation_distribution": [{"name": k, "value": v} for k, v in op_totals.items()],
                 "top_agents": sorted(agent_list, key=lambda x: x["last_activity"] or "", reverse=True)[:5],
