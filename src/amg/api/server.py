@@ -6,10 +6,11 @@ from pydantic import BaseModel, Field
 from datetime import datetime, timedelta
 from uuid import uuid4
 import logging
+import os
 
 from amg.adapters import InMemoryStorageAdapter, PostgresStorageAdapter
 from amg.kill_switch import KillSwitch
-from amg.context import GovernedContextBuilder
+from amg.context import GovernedContextBuilder, ContextRequest
 from amg.storage import PolicyCheck
 from amg.types import Memory, MemoryPolicy, MemoryType, Sensitivity, Scope, AuditRecord
 from amg.errors import (
@@ -116,8 +117,9 @@ def get_storage():
     """Get storage adapter instance."""
     global _storage
     if _storage is None:
-        # Use PostgresStorageAdapter (SQLite file) for persistence
-        _storage = PostgresStorageAdapter(db_path="amg.db")
+        # Use PostgresStorageAdapter with configurable DB path
+        db_path = os.getenv("AMG_DB_PATH", "amg.db")
+        _storage = PostgresStorageAdapter(db_path=db_path)
     return _storage
 
 
@@ -153,35 +155,22 @@ def create_app():
     )
 
     @app.get("/")
-    def read_root():
+    def read_root(authenticated_agent_id: str = Depends(verify_api_key)):
         """Root endpoint for health and stats - returns everything flat for Grafana."""
         try:
-            storage = get_storage()
-            all_memories = storage.get_all_memories() if hasattr(storage, 'get_all_memories') else []
+            # Re-use memory_summary logic but flatten it for Grafana
+            full_stats = memory_summary(authenticated_agent_id=authenticated_agent_id)
             
-            # Simple flat stats for maximum Grafana compatibility
+            # Flatten the nested structure for the legacy root endpoint
             stats = {
-                "total_memories": len(all_memories),
-                "long_term": 0,
-                "short_term": 0,
-                "episodic": 0,
-                "pii": 0,
-                "non_pii": 0,
-                "expired_count": 0,
+                "total_memories": full_stats["total_memories"],
+                "long_term": full_stats["by_type"].get("long_term", 0),
+                "short_term": full_stats["by_type"].get("short_term", 0),
+                "episodic": full_stats["by_type"].get("episodic", 0),
+                "pii": full_stats["by_sensitivity"].get("pii", 0),
+                "non_pii": full_stats["by_sensitivity"].get("non_pii", 0),
+                "expired_count": full_stats["expired_count"],
             }
-            
-            for mem in all_memories:
-                m_type = mem.get("memory_type", "unknown")
-                if m_type in stats:
-                    stats[m_type] += 1
-                
-                sens = mem.get("sensitivity", "unknown")
-                if sens in stats:
-                    stats[sens] += 1
-                    
-                if mem.get("is_expired"):
-                    stats["expired_count"] += 1
-            
             return stats
         except Exception:
             return {"status": "online", "message": "AMG Governance API"}
@@ -349,8 +338,6 @@ def create_app():
     ):
         """Build governed context for agent."""
         try:
-            from amg.context import ContextRequest
-
             filters = {}
             if request.memory_types:
                 filters["memory_types"] = request.memory_types
@@ -396,28 +383,6 @@ def create_app():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Context build failed: {str(e)}"
-            )
-
-    @app.get("/audit/export")
-    def export_audit_logs(
-        agent_id: Optional[str] = None,
-        limit: int = 1000,
-        storage=Depends(get_storage),
-        authenticated_agent_id: str = Depends(verify_api_key),
-    ):
-        """Export audit logs for compliance/analysis."""
-        try:
-            logs = storage.get_audit_log(agent_id=agent_id)
-            return {
-                "records": [log.to_dict() for log in logs[-limit:]],
-                "count": len(logs),
-                "timestamp": datetime.utcnow()
-            }
-        except Exception as e:
-            logger.error(f"Export failed: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Export failed: {str(e)}"
             )
 
     @app.get("/audit/{request_id}", response_model=dict)

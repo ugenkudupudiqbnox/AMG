@@ -11,12 +11,20 @@ from amg.types import MemoryType, Sensitivity, Scope
 
 @pytest.fixture(autouse=True)
 def disable_auth(monkeypatch):
-    """Disable authentication for API tests."""
+    """Disable authentication for API tests and use in-memory DB."""
     monkeypatch.setenv("AMG_AUTH_DISABLED", "true")
-    # Reset global auth config
+    monkeypatch.setenv("AMG_DB_PATH", ":memory:")
+    # Reset globals
+    import amg.api.server as server
+    server._storage = None
+    server._kill_switch = None
+    server._context_builder = None
+    
     import amg.api.auth as auth_module
     auth_module._auth_config = None
     yield
+    # Force reset after test
+    server._storage = None
     auth_module._auth_config = None
 
 
@@ -363,7 +371,7 @@ class TestKillSwitch:
         """Disable agent successfully."""
         response = client.post(
             "/agent/agent-disable/disable",
-            params={
+            json={
                 "reason": "test_disable",
                 "actor_id": "test-admin",
             }
@@ -384,7 +392,7 @@ class TestKillSwitch:
     def test_agent_status_disabled(self, client):
         """Agent status shows disabled after disable."""
         # Disable
-        client.post("/agent/agent-disabled/disable")
+        client.post("/agent/agent-disabled/disable", json={"reason": "test"})
 
         # Check status
         response = client.get("/agent/agent-disabled/status")
@@ -396,7 +404,7 @@ class TestKillSwitch:
         """Freeze agent writes (read-only mode)."""
         response = client.post(
             "/agent/agent-freeze/freeze",
-            params={"reason": "test_freeze"}
+            json={"reason": "test_freeze"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -405,7 +413,7 @@ class TestKillSwitch:
     def test_frozen_agent_blocks_writes(self, client):
         """Frozen agent cannot write memory."""
         # Freeze agent
-        client.post("/agent/agent-frozen-write/freeze")
+        client.post("/agent/agent-frozen-write/freeze", json={"reason": "freeze_test"})
 
         # Try to write
         response = client.post("/memory/write", json={
@@ -490,7 +498,7 @@ class TestIntegration:
         # Detect incident, freeze writes
         freeze_resp = client.post(
             f"/agent/{agent_id}/freeze",
-            params={"reason": "incident_detected"}
+            json={"reason": "incident_detected"}
         )
         assert freeze_resp.status_code == 200
 

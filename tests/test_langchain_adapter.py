@@ -30,9 +30,10 @@ def test_langchain_history_add_message(mock_amg):
     # Verify storage write was called with correct mapping
     storage.write.assert_called_once()
     args, kwargs = storage.write.call_args
-    assert kwargs['agent_id'] == "test-agent"
-    assert "Human: Hello AMG" in kwargs['content']
-    assert kwargs['memory_type'] == "short_term"
+    memory = kwargs['memory']
+    assert memory.agent_id == "test-agent"
+    assert "Human: Hello AMG" in memory.content
+    assert memory.policy.memory_type.value == "short_term"
 
 def test_langchain_history_get_messages(mock_amg):
     storage, kill_switch = mock_amg

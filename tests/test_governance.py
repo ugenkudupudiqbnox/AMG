@@ -211,7 +211,7 @@ class TestKillSwitch:
         allowed, _ = kill_switch.check_allowed("agent-123", OperationType.WRITE)
         assert not allowed
 
-        kill_switch.enable("agent-123", "admin")
+        kill_switch.enable("agent-123", "re-enabling", "admin")
 
         allowed, _ = kill_switch.check_allowed("agent-123", OperationType.WRITE)
         assert allowed
@@ -222,9 +222,9 @@ class TestKillSwitch:
 
     def test_global_shutdown_disables_all_agents(self, kill_switch):
         """Global shutdown disables all active agents."""
-        kill_switch.enable("agent-1", "admin")
-        kill_switch.enable("agent-2", "admin")
-        kill_switch.enable("agent-3", "admin")
+        kill_switch.enable("agent-1", "setup", "admin")
+        kill_switch.enable("agent-2", "setup", "admin")
+        kill_switch.enable("agent-3", "setup", "admin")
 
         results = kill_switch.global_shutdown("emergency_shutdown", "admin")
 
@@ -253,7 +253,7 @@ class TestKillSwitch:
         """Audit log records all operations."""
         kill_switch.disable("agent-1", "reason1", "admin")
         kill_switch.freeze_writes("agent-2", "reason2", "admin")
-        kill_switch.enable("agent-1", "admin")
+        kill_switch.enable("agent-1", "reactivating", "admin")
 
         logs = kill_switch.get_audit_log()
         assert len(logs) == 3

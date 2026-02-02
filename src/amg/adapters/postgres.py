@@ -112,6 +112,21 @@ class PostgresStorageAdapter(StorageAdapter):
         if self.conn is None:
             conn.close()
 
+    def _write_audit_to_db(self, cursor, audit: AuditRecord):
+        """Helper to insert an audit record into the database."""
+        cursor.execute("""
+            INSERT INTO audit_log (
+                audit_id, timestamp, agent_id, request_id, operation,
+                memory_id, policy_version, decision, reason, actor_id,
+                metadata, signature
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            audit.audit_id, audit.timestamp.isoformat(), audit.agent_id,
+            audit.request_id, audit.operation, audit.memory_id,
+            audit.policy_version, audit.decision, audit.reason,
+            audit.actor_id, json.dumps(audit.metadata), audit.signature,
+        ))
+
     def write(self, memory: Memory, policy_metadata: Dict[str, Any]) -> AuditRecord:
         """Write memory with governance enforcement."""
         if not memory.agent_id:
@@ -155,19 +170,7 @@ class PostgresStorageAdapter(StorageAdapter):
                 },
             )
             object.__setattr__(audit, 'signature', self._sign_record(audit))
-
-            cursor.execute("""
-                INSERT INTO audit_log (
-                    audit_id, timestamp, agent_id, request_id, operation,
-                    memory_id, policy_version, decision, reason, actor_id,
-                    metadata, signature
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                audit.audit_id, audit.timestamp.isoformat(), audit.agent_id,
-                audit.request_id, audit.operation, audit.memory_id,
-                audit.policy_version, audit.decision, audit.reason,
-                audit.actor_id, json.dumps(audit.metadata), audit.signature,
-            ))
+            self._write_audit_to_db(cursor, audit)
 
             conn.commit()
             return audit
@@ -215,19 +218,8 @@ class PostgresStorageAdapter(StorageAdapter):
                 metadata={"scope": memory.policy.scope.value},
             )
             object.__setattr__(audit, 'signature', self._sign_record(audit))
+            self._write_audit_to_db(cursor, audit)
 
-            cursor.execute("""
-                INSERT INTO audit_log (
-                    audit_id, timestamp, agent_id, request_id, operation,
-                    memory_id, policy_version, decision, reason, actor_id,
-                    metadata, signature
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                audit.audit_id, audit.timestamp.isoformat(), audit.agent_id,
-                audit.request_id, audit.operation, audit.memory_id,
-                audit.policy_version, audit.decision, audit.reason,
-                audit.actor_id, json.dumps(audit.metadata), audit.signature,
-            ))
             conn.commit()
             return memory, audit
         finally:
@@ -262,19 +254,8 @@ class PostgresStorageAdapter(StorageAdapter):
                 metadata={"deletion_reason": reason},
             )
             object.__setattr__(audit, 'signature', self._sign_record(audit))
+            self._write_audit_to_db(cursor, audit)
 
-            cursor.execute("""
-                INSERT INTO audit_log (
-                    audit_id, timestamp, agent_id, request_id, operation,
-                    memory_id, policy_version, decision, reason, actor_id,
-                    metadata, signature
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                audit.audit_id, audit.timestamp.isoformat(), audit.agent_id,
-                audit.request_id, audit.operation, audit.memory_id,
-                audit.policy_version, audit.decision, audit.reason,
-                audit.actor_id, json.dumps(audit.metadata), audit.signature,
-            ))
             conn.commit()
             return audit
         finally:
@@ -342,19 +323,8 @@ class PostgresStorageAdapter(StorageAdapter):
                 },
             )
             object.__setattr__(audit, 'signature', self._sign_record(audit))
+            self._write_audit_to_db(cursor, audit)
 
-            cursor.execute("""
-                INSERT INTO audit_log (
-                    audit_id, timestamp, agent_id, request_id, operation,
-                    memory_id, policy_version, decision, reason, actor_id,
-                    metadata, signature
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                audit.audit_id, audit.timestamp.isoformat(), audit.agent_id,
-                audit.request_id, audit.operation, None,
-                audit.policy_version, audit.decision, audit.reason,
-                audit.actor_id, json.dumps(audit.metadata), audit.signature,
-            ))
             conn.commit()
             return results, audit
         finally:
@@ -427,18 +397,7 @@ class PostgresStorageAdapter(StorageAdapter):
         if not hasattr(record, 'signature') or not record.signature:
             object.__setattr__(record, 'signature', self._sign_record(record))
 
-        cursor.execute("""
-            INSERT INTO audit_log (
-                audit_id, timestamp, agent_id, request_id, operation,
-                memory_id, policy_version, decision, reason, actor_id,
-                metadata, signature
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            record.audit_id, record.timestamp.isoformat(), record.agent_id,
-            record.request_id, record.operation, record.memory_id,
-            record.policy_version, record.decision, record.reason,
-            record.actor_id, json.dumps(record.metadata), record.signature,
-        ))
+        self._write_audit_to_db(cursor, record)
         conn.commit()
         self._close_conn(conn)
 
@@ -504,18 +463,7 @@ class PostgresStorageAdapter(StorageAdapter):
 
         conn = self._get_conn()
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO audit_log (
-                audit_id, timestamp, agent_id, request_id, operation,
-                memory_id, policy_version, decision, reason, actor_id,
-                metadata, signature
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            audit.audit_id, audit.timestamp.isoformat(), audit.agent_id,
-            audit.request_id, audit.operation, audit.memory_id,
-            audit.policy_version, audit.decision, audit.reason,
-            audit.actor_id, json.dumps(audit.metadata), audit.signature,
-        ))
+        self._write_audit_to_db(cursor, audit)
         conn.commit()
         self._close_conn(conn)
 

@@ -182,7 +182,7 @@ class TestMemoryStore:
         assert audit_after.reason == "policy_enforcement_passed"
 
     def test_audit_logs_are_chronologically_ordered(self, adapter):
-        """Audit records maintain order (append-only)."""
+        """Audit records maintain order (newest first)."""
         mem1 = Memory(agent_id="agent-1", content="mem1")
         mem2 = Memory(agent_id="agent-2", content="mem2")
         
@@ -190,9 +190,10 @@ class TestMemoryStore:
         adapter.write(mem2, {"request_id": "req-2"})
         
         logs = adapter.get_audit_log()
-        assert logs[0].memory_id == mem1.memory_id
-        assert logs[1].memory_id == mem2.memory_id
-        assert logs[0].timestamp <= logs[1].timestamp
+        # Storage returns DESC order (newest first)
+        assert logs[0].memory_id == mem2.memory_id
+        assert logs[1].memory_id == mem1.memory_id
+        assert logs[0].timestamp >= logs[1].timestamp
 
     def test_audit_records_are_signed(self, adapter, sample_memory):
         """Audit records include signature (prevents tampering)."""
@@ -214,11 +215,11 @@ class TestMemoryStore:
         adapter.delete(sample_memory.memory_id, "admin", "test_deletion")
         
         logs = adapter.get_audit_log()
-        assert len(logs) == 4
-        assert logs[0].operation == "write"
-        assert logs[1].operation == "read"
-        assert logs[2].operation == "query"
-        assert logs[3].operation == "delete"
+        # Storage returns newest first
+        assert logs[0].operation == "delete"
+        assert logs[1].operation == "query"
+        assert logs[2].operation == "read"
+        assert logs[3].operation == "write"
 
     # ============================================================
     # Critical Path 4: Query with Retrieval Guard

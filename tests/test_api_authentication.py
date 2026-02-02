@@ -249,7 +249,8 @@ class TestAPIEndpointsWithAuth:
     def test_disable_agent_with_valid_key(self, client):
         """Disable agent with valid API key should succeed."""
         response = client.post(
-            "/agent/agent-123/disable?reason=test",
+            "/agent/agent-123/disable",
+            json={"reason": "test"},
             headers={"X-API-Key": "sk-valid-key"}
         )
         assert response.status_code == 200
@@ -258,7 +259,7 @@ class TestAPIEndpointsWithAuth:
     def test_disable_agent_with_invalid_key(self, client):
         """Disable agent with invalid API key should fail."""
         response = client.post(
-            "/agent/agent-123/disable?reason=test",
+            "/agent/agent-123/disable",
             headers={"X-API-Key": "sk-invalid"}
         )
         assert response.status_code == 401
@@ -266,7 +267,8 @@ class TestAPIEndpointsWithAuth:
     def test_freeze_writes_with_valid_key(self, client):
         """Freeze writes with valid API key should succeed."""
         response = client.post(
-            "/agent/agent-123/freeze?reason=test",
+            "/agent/agent-123/freeze",
+            json={"reason": "test"},
             headers={"X-API-Key": "sk-valid-key"}
         )
         assert response.status_code == 200
@@ -275,7 +277,7 @@ class TestAPIEndpointsWithAuth:
     def test_freeze_writes_with_invalid_key(self, client):
         """Freeze writes with invalid API key should fail."""
         response = client.post(
-            "/agent/agent-123/freeze?reason=test",
+            "/agent/agent-123/freeze",
             headers={"X-API-Key": "sk-invalid"}
         )
         assert response.status_code == 401

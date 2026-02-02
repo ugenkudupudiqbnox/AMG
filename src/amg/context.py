@@ -148,6 +148,8 @@ class GovernedContextBuilder:
                 "returned_count": len(truncated_memories[:max_items]),
                 "filtered_count": audit.metadata.get("filtered_count", 0),
                 "total_examined": audit.metadata.get("total_records_examined", 0),
+                "policy_version": "1.0.0",
+                "audit_id": audit.audit_id,
             },
             audit_id=audit.audit_id
         )
