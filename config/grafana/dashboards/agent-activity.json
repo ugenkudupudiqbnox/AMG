@@ -52,7 +52,7 @@
     },
     {
       "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 4 },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 4 },
       "id": 1,
       "options": {
         "showHeader": true
@@ -78,7 +78,7 @@
     },
     {
       "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 4 },
       "id": 2,
       "options": {
         "displayMode": "basic",
