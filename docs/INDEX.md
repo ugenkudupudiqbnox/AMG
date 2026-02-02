@@ -7,6 +7,7 @@
 ## 📋 Quick Navigation
 
 ### Getting Started
+- **[Unified Setup Script](../scripts/setup-amg-grafana.sh)** - One-command AMG + Grafana deployment
 - **[README.md](../README.md)** - Project overview and core concepts
 - **[Contributing](../CONTRIBUTING.md)** - How to contribute to AMG
 - **[Security Policy](../SECURITY.md)** - Security reporting and scope

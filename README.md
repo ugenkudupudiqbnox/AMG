@@ -52,18 +52,33 @@ AMG/
 │
 ├── scripts/                           # Automation scripts
 │   ├── amg-api.service              # Systemd service file
+│   ├── setup-amg-grafana.sh           # Unified AMG + Grafana setup
 │   ├── setup-https.sh                # HTTPS setup script
 │   └── setup-grafana.sh              # Grafana setup script
 │
 └── config/                            # Configuration files
-    └── amg-api-https.conf            # Nginx HTTPS config
+    ├── amg-api-https.conf            # Nginx HTTPS config
+    └── grafana/
+        └── dashboards/
+            └── amg-overview.json    # Pre-built Grafana dashboard
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### Getting Started
+### 1. Unified Setup (Recommended)
+Set up both AMG and Grafana with a single command:
+```bash
+sudo ./scripts/setup-amg-grafana.sh
+```
+This script automatically:
+- Installs AMG API and systemd service
+- Installs Grafana (via Docker)
+- Configures Nginx reverse proxy and SSL
+- Provisions the AMG API data source and pre-built monitoring dashboards
+
+### 2. Manual Getting Started
 1. **Read**: [README.md](./README.md) (this file)
 2. **Learn**: [docs/INDEX.md](./docs/INDEX.md) - Full documentation hub
 3. **Deploy**: [docs/deployment/](./docs/deployment/) - Setup guides

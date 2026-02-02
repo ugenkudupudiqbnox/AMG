@@ -1,6 +1,20 @@
 # Grafana Dashboards for AMG Monitoring
 
-**Status:** Installed and running at `https://grafana.soc.qbnox.com`
+**Status**: Installed and running at `https://grafana.soc.qbnox.com`
+**Automatic Provisioning**: Enabled (Dashboards are automatically created on setup)
+
+---
+
+## Automatic Dashboards
+
+The standard AMG suite includes the following pre-built dashboards:
+
+### 1. AMG Governance Overview
+- **Path**: Search for "AMG Governance Overview" in Grafana
+- **Panels**:
+  - **Total Memories**: Live count of all stored memory items.
+  - **Memory by Type**: Donut chart showing distribution of short-term, long-term, and episodic memories.
+- **Data Source**: Automatically connected to `AMG-API`.
 
 ---
 
