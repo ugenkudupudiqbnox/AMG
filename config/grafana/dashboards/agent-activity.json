@@ -1,0 +1,92 @@
+{
+  "editable": true,
+  "refresh": "5s",
+  "panels": [
+    {
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/stats/agent-activity",
+          "urlPath": "/stats/agent-activity",
+          "queryType": "json",
+          "jsonPath": "$",
+          "fields": [
+            { "name": "Agent ID", "jsonPath": "$.agent_summaries[*].agent_id" },
+            { "name": "Operations", "jsonPath": "$.agent_summaries[*].operations_count" },
+            { "name": "Last Activity", "jsonPath": "$.agent_summaries[*].last_activity" }
+          ]
+        }
+      ],
+      "title": "Agent Operations Summary",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 2,
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "values": true
+        },
+        "showUnfilled": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/stats/agent-activity",
+          "urlPath": "/stats/agent-activity",
+          "queryType": "json",
+          "jsonPath": "$",
+          "fields": [
+            { "name": "Operation", "jsonPath": "$.operation_distribution[*].name" },
+            { "name": "Count", "jsonPath": "$.operation_distribution[*].value" }
+          ]
+        }
+      ],
+      "title": "Operations Type Breakdown",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "id": 3,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/stats/agent-activity",
+          "urlPath": "/stats/agent-activity",
+          "queryType": "json",
+          "jsonPath": "$",
+          "fields": [
+            { "name": "Agent ID", "jsonPath": "$.top_agents[*].agent_id" },
+            { "name": "Operations", "jsonPath": "$.top_agents[*].operations_count" },
+            { "name": "Last Active", "jsonPath": "$.top_agents[*].last_activity" }
+          ]
+        }
+      ],
+      "title": "Top 5 Active Agents (Latest)",
+      "type": "table"
+    }
+  ],
+  "title": "Agent Activity Governance",
+  "uid": "amg-agent-activity",
+  "version": 2
+}

@@ -137,11 +137,11 @@
           "queryType": "json",
           "jsonPath": "$",
           "fields": [
-            { "name": "Timestamp", "jsonPath": "$.[*].timestamp" },
-            { "name": "Agent ID", "jsonPath": "$.[*].agent_id" },
-            { "name": "Operation", "jsonPath": "$.[*].operation" },
-            { "name": "Decision", "jsonPath": "$.[*].decision" },
-            { "name": "Reason", "jsonPath": "$.[*].reason" }
+            { "name": "Timestamp", "jsonPath": "$.logs[*].timestamp", "type": "time" },
+            { "name": "Agent ID", "jsonPath": "$.logs[*].agent_id" },
+            { "name": "Operation", "jsonPath": "$.logs[*].operation" },
+            { "name": "Decision", "jsonPath": "$.logs[*].decision" },
+            { "name": "Reason", "jsonPath": "$.logs[*].reason" }
           ]
         }
       ],

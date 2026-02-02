@@ -733,7 +733,7 @@ def create_app():
                     "reason": log.reason,
                     "request_id": log.request_id
                 })
-            return results
+            return {"logs": results}
         except Exception as e:
             logger.error(f"Audit logs failed: {e}")
             raise HTTPException(status_code=500, detail=str(e))
@@ -767,16 +767,31 @@ def create_app():
                     }
                 
                 agent_stats[agent_id]["operations_count"] += 1
-                agent_stats[agent_id]["last_activity"] = log.timestamp if hasattr(log, "timestamp") else datetime.utcnow()
+                curr_ts = log.timestamp if hasattr(log, "timestamp") else datetime.utcnow()
+                if not agent_stats[agent_id]["last_activity"] or curr_ts > agent_stats[agent_id]["last_activity"]:
+                    agent_stats[agent_id]["last_activity"] = curr_ts
                 
                 op = log.operation if hasattr(log, "operation") else "unknown"
                 agent_stats[agent_id]["operations"][op] = agent_stats[agent_id]["operations"].get(op, 0) + 1
             
+            # Format for Grafana
+            agent_list = []
+            op_totals = {}
+            for agent_id, data in agent_stats.items():
+                agent_list.append({
+                    "agent_id": agent_id,
+                    "operations_count": data["operations_count"],
+                    "last_activity": data["last_activity"].isoformat() if data["last_activity"] else None
+                })
+                for op, count in data["operations"].items():
+                    op_totals[op] = op_totals.get(op, 0) + count
+            
             return {
-                "active_agents": list(agent_stats.keys()),
-                "agent_stats": agent_stats,
-                "disabled_agents": [],  # Would populate from kill_switch if available
-                "summary_timestamp": datetime.utcnow(),
+                "agent_summaries": sorted(agent_list, key=lambda x: x["operations_count"], reverse=True),
+                "operation_distribution": [{"name": k, "value": v} for k, v in op_totals.items()],
+                "top_agents": sorted(agent_list, key=lambda x: x["last_activity"] or "", reverse=True)[:5],
+                "disabled_agents": [],
+                "summary_timestamp": datetime.utcnow().isoformat(),
             }
         except Exception as e:
             logger.error(f"Agent activity failed: {e}")
