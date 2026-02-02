@@ -3,6 +3,8 @@ Governance before intelligence. Control before autonomy.
 
 > **A governance-first memory control plane for AI agents.**
 > Built for auditability, compliance, and deterministic behavior.
+>
+> AMG provides a deterministic, enterprise-grade memory governance layer for agents — unlike in-model memory storage or ungoverned vector silos
 
 **Status:** Early / V1 (Foundational)
 
