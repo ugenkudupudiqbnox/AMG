@@ -42,10 +42,11 @@ python3 -m pytest tests/ -v
 # Development (with auto-reload)
 python3 run_api.py --reload
 
-# Production
-python3 run_api.py --host 0.0.0.0 --port 8000
+# Production (behind reverse proxy - always use HTTPS)
+python3 run_api.py --host 127.0.0.1 --port 8000
 
-# Then visit: http://localhost:8000/docs
+# Local dev: visit http://localhost:8000/docs
+# Production: visit https://api.example.com/docs (via reverse proxy)
 ```
 
 ---
@@ -175,12 +176,28 @@ export AMG_AUTH_DISABLED=true
 python3 run_api.py
 ```
 
-### Write Memory
+### Write Memory (Local Development)
 
 ```bash
+# Development (HTTP + localhost)
 curl -X POST http://localhost:8000/memory/write \
   -H "Content-Type: application/json" \
   -H "X-API-Key: sk-abc123" \
+  -d '{
+    "agent_id": "agent-123",
+    "content": "User reported issue #42",
+    "memory_type": "episodic",
+    "sensitivity": "non_pii"
+  }'
+```
+
+### Write Memory (Production HTTPS)
+
+```bash
+# Production (HTTPS + domain)
+curl -X POST https://api.example.com/memory/write \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: sk-prod-key" \
   -d '{
     "agent_id": "agent-123",
     "content": "User reported issue #42",
@@ -198,10 +215,10 @@ curl -X POST http://localhost:8000/memory/write \
 }
 ```
 
-### Query Memory
+### Query Memory (HTTPS Production)
 
 ```bash
-curl -X POST http://localhost:8000/memory/query \
+curl -X POST https://api.example.com/memory/query \
   -H "Content-Type: application/json" \
   -H "X-API-Key: sk-abc123" \
   -d '{
@@ -211,10 +228,10 @@ curl -X POST http://localhost:8000/memory/query \
   }'
 ```
 
-### Build Context
+### Build Context (HTTPS Production)
 
 ```bash
-curl -X POST http://localhost:8000/context/build \
+curl -X POST https://api.example.com/context/build \
   -H "Content-Type: application/json" \
   -H "X-API-Key: sk-abc123" \
   -d '{
@@ -224,24 +241,28 @@ curl -X POST http://localhost:8000/context/build \
   }'
 ```
 
-### Incident Response
+### Incident Response (HTTPS Production)
 
 ```bash
 # Freeze agent writes
-curl -X POST "http://localhost:8000/agent/agent-123/freeze?reason=suspicious_pattern"
+curl -X POST "https://api.example.com/agent/agent-123/freeze?reason=suspicious_pattern" \
+  -H "X-API-Key: sk-prod-key"
 
 # Check status
-curl http://localhost:8000/agent/agent-123/status
+curl https://api.example.com/agent/agent-123/status \
+  -H "X-API-Key: sk-prod-key"
 
 # If confirmed malicious, disable
-curl -X POST "http://localhost:8000/agent/agent-123/disable?reason=confirmed_attack"
+curl -X POST "https://api.example.com/agent/agent-123/disable?reason=confirmed_attack" \
+  -H "X-API-Key: sk-prod-key"
 ```
 
-### Get Audit Trail
+### Get Audit Trail (HTTPS Production)
 
 ```bash
 # Retrieve audit logs
-curl "http://localhost:8000/audit/audit-abc123"
+curl "https://api.example.com/audit/audit-abc123" \
+  -H "X-API-Key: sk-prod-key"
 ```
 
 ---
@@ -391,7 +412,11 @@ sudo journalctl -u amg-api -f
 # health-check.sh
 
 while true; do
+  # Local development (HTTP)
   response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)
+  
+  # Production (HTTPS)
+  # response=$(curl -s -o /dev/null -w "%{http_code}" https://api.example.com/health -H "X-API-Key: sk-prod-key")
   
   if [ "$response" -eq 200 ]; then
     echo "✅ API healthy"
@@ -901,8 +926,11 @@ ps aux | grep run_api
 # Check logs
 tail -f /tmp/amg_api.log
 
-# Test connectivity
+# Test connectivity (local)
 curl -v http://localhost:8000/health
+
+# Test connectivity (production HTTPS)
+curl -v https://api.example.com/health -H "X-API-Key: sk-prod-key"
 
 # Check firewall
 sudo ufw status
