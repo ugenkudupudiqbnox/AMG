@@ -65,7 +65,7 @@ class InMemoryStorageAdapter(StorageAdapter):
                 "ttl_seconds": memory.policy.ttl_seconds,
             },
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, 'signature', self._sign_record(audit))
         self._audit_log.append(audit)
 
         return audit
@@ -130,7 +130,7 @@ class InMemoryStorageAdapter(StorageAdapter):
                 "sensitivity": memory.policy.sensitivity.value,
             },
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, 'signature', self._sign_record(audit))
         self._audit_log.append(audit)
 
         return memory, audit
@@ -153,7 +153,7 @@ class InMemoryStorageAdapter(StorageAdapter):
             actor_id=actor_id,
             metadata={"deletion_reason": reason},
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, 'signature', self._sign_record(audit))
         self._audit_log.append(audit)
 
         return audit
@@ -208,7 +208,7 @@ class InMemoryStorageAdapter(StorageAdapter):
                 "filters": str(filters),
             },
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, 'signature', self._sign_record(audit))
         self._audit_log.append(audit)
 
         return results, audit
@@ -271,7 +271,7 @@ class InMemoryStorageAdapter(StorageAdapter):
             reason=reason,
             actor_id=agent_id,
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, 'signature', self._sign_record(audit))
         self._audit_log.append(audit)
         return audit
 

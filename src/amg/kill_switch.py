@@ -109,7 +109,7 @@ class KillSwitch:
                 "disabled_by": actor_id,
             },
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, "signature", self._sign_record(audit))
         self._audit_log[audit.audit_id] = audit
 
         return audit
@@ -142,7 +142,7 @@ class KillSwitch:
                 "reads_allowed": True,
             },
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, "signature", self._sign_record(audit))
         self._audit_log[audit.audit_id] = audit
 
         return audit
@@ -187,7 +187,7 @@ class KillSwitch:
             actor_id=actor_id,
             metadata={"state": AgentState.ENABLED.value},
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, "signature", self._sign_record(audit))
         self._audit_log[audit.audit_id] = audit
 
         return audit

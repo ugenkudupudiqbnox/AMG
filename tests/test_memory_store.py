@@ -172,9 +172,12 @@ class TestMemoryStore:
         adapter.write(sample_memory, {"request_id": "req-123"})
         
         audit_before = adapter.get_audit_log()[0]
-        audit_before.reason = "TAMPERED"  # Try to modify
         
-        # Retrieve again - should be unchanged
+        # Try to modify - should raise because AuditRecord is frozen
+        with pytest.raises(Exception):  # FrozenInstanceError
+            audit_before.reason = "TAMPERED"
+        
+        # Verify original is unchanged
         audit_after = adapter.get_audit_log()[0]
         assert audit_after.reason == "policy_enforcement_passed"
 

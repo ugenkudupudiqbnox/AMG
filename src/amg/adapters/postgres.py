@@ -154,7 +154,7 @@ class PostgresStorageAdapter(StorageAdapter):
                     "ttl_seconds": memory.policy.ttl_seconds,
                 },
             )
-            audit.signature = self._sign_record(audit)
+            object.__setattr__(audit, 'signature', self._sign_record(audit))
 
             cursor.execute("""
                 INSERT INTO audit_log (
@@ -214,7 +214,7 @@ class PostgresStorageAdapter(StorageAdapter):
                 actor_id=agent_id,
                 metadata={"scope": memory.policy.scope.value},
             )
-            audit.signature = self._sign_record(audit)
+            object.__setattr__(audit, 'signature', self._sign_record(audit))
 
             cursor.execute("""
                 INSERT INTO audit_log (
@@ -261,7 +261,7 @@ class PostgresStorageAdapter(StorageAdapter):
                 actor_id=actor_id,
                 metadata={"deletion_reason": reason},
             )
-            audit.signature = self._sign_record(audit)
+            object.__setattr__(audit, 'signature', self._sign_record(audit))
 
             cursor.execute("""
                 INSERT INTO audit_log (
@@ -341,7 +341,7 @@ class PostgresStorageAdapter(StorageAdapter):
                     "filters": str(filters),
                 },
             )
-            audit.signature = self._sign_record(audit)
+            object.__setattr__(audit, 'signature', self._sign_record(audit))
 
             cursor.execute("""
                 INSERT INTO audit_log (
@@ -452,7 +452,7 @@ class PostgresStorageAdapter(StorageAdapter):
             reason=reason,
             actor_id=agent_id,
         )
-        audit.signature = self._sign_record(audit)
+        object.__setattr__(audit, 'signature', self._sign_record(audit))
 
         conn = self._get_conn()
         cursor = conn.cursor()

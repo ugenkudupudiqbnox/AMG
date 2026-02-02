@@ -78,7 +78,7 @@ class Memory:
         return now >= self.expires_at
 
 
-@dataclass
+@dataclass(frozen=True)
 class AuditRecord:
     """Immutable audit log entry for all governance decisions.
     
