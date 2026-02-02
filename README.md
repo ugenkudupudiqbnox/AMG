@@ -1,4 +1,5 @@
-# Agent Memory Governance (AMG)
+# Agent Memory Governance (AMG) 
+Governance before intelligence. Control before autonomy.
 
 > **A governance-first memory control plane for AI agents.**
 > Built for auditability, compliance, and deterministic behavior.
