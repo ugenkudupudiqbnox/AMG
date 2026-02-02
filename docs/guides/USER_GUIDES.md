@@ -5,10 +5,11 @@
 2. Python SDK Guide
 3. HTTP API Guide
 4. LangGraph Integration
-5. Deployment & Operations
-6. Dashboard Setup & Monitoring
-7. Security & Best Practices
-8. Troubleshooting
+5. LangChain & Langflow Integration
+6. Deployment & Operations
+7. Dashboard Setup & Monitoring
+8. Security & Best Practices
+9. Troubleshooting
 
 ---
 
@@ -335,7 +336,66 @@ print(f"State: {status['state']}")
 
 ---
 
-## 5. Deployment & Operations
+## 5. LangChain & Langflow Integration
+
+### LangChain Setup
+
+AMG provides a `BaseChatMessageHistory` implementation, allowing any LangChain agent to use governed memory.
+
+```python
+from amg.adapters.langchain import AMGChatMessageHistory
+from amg.adapters import InMemoryStorageAdapter
+from amg.kill_switch import KillSwitch
+
+# 1. Setup AMG core
+storage = InMemoryStorageAdapter()
+kill_switch = KillSwitch(storage)
+
+# 2. Create LangChain history
+history = AMGChatMessageHistory(
+    agent_id="langchain-agent",
+    storage=storage,
+    kill_switch=kill_switch,
+    session_id="conversation-456",
+    memory_type="short_term" # Governance defaults
+)
+
+# 3. Use in LangChain
+history.add_user_message("What is the current policy?")
+history.add_ai_message("Governance precedes intelligence.")
+
+print(history.messages)
+```
+
+### Langflow Integration
+
+In Langflow, you can use the **Custom Component** to integrate AMG memory.
+
+#### 1. Add Custom Component
+Drag a "Custom Component" into your workspace.
+
+#### 2. Paste AMG Component Logic
+Use the following logic in your custom component to connect to your AMG server:
+
+```python
+from langflow.interface.custom.custom_component import CustomComponent
+from amg.adapters.langchain import AMGChatMessageHistory
+# ... import your storage adapter ...
+
+class AMGMemoryComponent(CustomComponent):
+    display_name = "AMG Memory"
+    def build(self, agent_id: str) -> AMGChatMessageHistory:
+        # Connect to your production AMG instance
+        return AMGChatMessageHistory(
+            agent_id=agent_id,
+            storage=prod_storage, 
+            kill_switch=prod_kill_switch
+        )
+```
+
+---
+
+## 6. Deployment & Operations
 
 ### Docker Deployment
 
@@ -844,7 +904,7 @@ openssl s_client -connect localhost:443 -cipher 'ALL' 2>/dev/null | grep Cipher
 
 ---
 
-## 6. Dashboard Setup & Monitoring
+## 7. Dashboard Setup & Monitoring
 
 AMG provides a set of governance-aware APIs specifically designed for building dashboards and monitoring solutions. Rather than including dashboards in the core project (which would violate our governance-first scope), we provide APIs that enable auditors, sysadmins, and operators to build dashboards using their preferred tools.
 
@@ -1326,7 +1386,7 @@ Complete API reference, advanced examples, and integration patterns are document
 
 ---
 
-## 7. Security & Best Practices
+## 8. Security & Best Practices
 
 ### API Key Management
 
@@ -1385,7 +1445,7 @@ for log in logs:
 
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 ### Tests Failing
 

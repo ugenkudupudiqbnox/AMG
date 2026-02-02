@@ -26,8 +26,10 @@
 2. **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community guidelines
 3. **[SECURITY.md](SECURITY.md)** - Security policies and responsible disclosure
 
-### Phase Completion Reports
-1. **[PHASE_4_COMPLETION.md](PHASE_4_COMPLETION.md)** - HTTP API foundation
+### Framework Adapters
+1. **[langgraph.py](../../src/amg/adapters/langgraph.py)** - LangGraph framework adapter
+2. **[langchain.py](../../src/amg/adapters/langchain.py)** - LangChain ecosystem adapter
+3. **[langflow.py](../../src/amg/adapters/langflow.py)** - Langflow custom component support
 2. **[PHASE_5_COMPLETION.md](PHASE_5_COMPLETION.md)** - HTTP API implementation
 3. **[PHASE_5_AUTH_COMPLETION.md](PHASE_5_AUTH_COMPLETION.md)** - Authentication & documentation
 
