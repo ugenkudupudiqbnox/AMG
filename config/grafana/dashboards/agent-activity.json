@@ -47,7 +47,7 @@
           ]
         }
       ],
-      "title": "Overall Activity Summary",
+      "title": "Agent Operations Summary",
       "type": "stat"
     },
     {
@@ -73,12 +73,12 @@
           ]
         }
       ],
-      "title": "Agent Operations Summary",
+      "title": "Agent Activity Details",
       "type": "table"
     },
     {
       "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
       "id": 2,
       "options": {
         "displayMode": "basic",
@@ -106,32 +106,6 @@
       ],
       "title": "Operations Type Breakdown",
       "type": "bargauge"
-    },
-    {
-      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
-      "id": 3,
-      "options": {
-        "showHeader": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
-          "method": "GET",
-          "path": "/stats/agent-activity",
-          "urlPath": "/stats/agent-activity",
-          "queryType": "json",
-          "jsonPath": "$",
-          "fields": [
-            { "name": "Agent ID", "jsonPath": "$.top_agents[*].agent_id" },
-            { "name": "Operations", "jsonPath": "$.top_agents[*].operations_count" },
-            { "name": "Last Active", "jsonPath": "$.top_agents[*].last_activity" }
-          ]
-        }
-      ],
-      "title": "Top 5 Active Agents (Latest)",
-      "type": "table"
     }
   ],
   "title": "Agent Activity Governance",
