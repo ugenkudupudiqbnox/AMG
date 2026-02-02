@@ -6,8 +6,9 @@
 3. HTTP API Guide
 4. LangGraph Integration
 5. Deployment & Operations
-6. Security & Best Practices
-7. Troubleshooting
+6. Dashboard Setup & Monitoring
+7. Security & Best Practices
+8. Troubleshooting
 
 ---
 
@@ -843,7 +844,489 @@ openssl s_client -connect localhost:443 -cipher 'ALL' 2>/dev/null | grep Cipher
 
 ---
 
-## 6. Security & Best Practices
+## 6. Dashboard Setup & Monitoring
+
+AMG provides a set of governance-aware APIs specifically designed for building dashboards and monitoring solutions. Rather than including dashboards in the core project (which would violate our governance-first scope), we provide APIs that enable auditors, sysadmins, and operators to build dashboards using their preferred tools.
+
+### Overview
+
+The dashboard APIs enable you to:
+- **Export audit logs** for compliance and forensics
+- **Monitor memory statistics** (usage by type, sensitivity, scope)
+- **Track agent activity** (operation counts, activity patterns)
+- **Monitor infrastructure** (certificates, rate limits, system health)
+- **Inspect governance** (current policies, agent registry)
+
+All dashboard APIs require admin authentication (`X-API-Key` header with admin privileges).
+
+### Available Dashboard APIs
+
+**Audit & Compliance:**
+- `GET /audit/export` — Export audit logs with date/operation filtering (compliance-ready)
+- `GET /config/policies` — View current governance policies and constraints
+- `GET /config/agents` — List registered agents and their status
+
+**Memory & Storage Statistics:**
+- `GET /stats/memory-summary` — Total memory count by type/sensitivity/scope
+- `GET /stats/agent-activity` — Per-agent operation counts and activity tracking
+
+**Infrastructure Monitoring:**
+- `GET /stats/rate-limit-hits` — Rate limiting statistics and abuse patterns
+- `GET /system/certificate-status` — SSL certificate expiry and renewal status
+
+**Complete API Reference:** See [DASHBOARD_BUILDER_GUIDE.md](DASHBOARD_BUILDER_GUIDE.md) for detailed endpoint documentation.
+
+### Quick Start: Audit Logs Export
+
+**Export all audit logs (current day):**
+
+```bash
+curl -s https://api.example.com/audit/export \
+  -H "X-API-Key: sk-admin-key-here" | jq '.'
+```
+
+**Export logs for specific date range (compliance query):**
+
+```bash
+curl -s "https://api.example.com/audit/export?start_date=2026-01-26&end_date=2026-02-02&operation=disable" \
+  -H "X-API-Key: sk-admin-key-here" | jq '.records | length'
+```
+
+**Example response:**
+```json
+{
+  "records": [
+    {
+      "audit_id": "audit-123",
+      "timestamp": "2026-02-01T14:30:45Z",
+      "agent_id": "my-agent",
+      "operation": "read",
+      "decision": "allowed",
+      "reason": "policy_matched",
+      "request_id": "req-abc"
+    }
+  ],
+  "total_count": 1234,
+  "filtered_count": 5
+}
+```
+
+### Quick Start: Memory Statistics
+
+**Get memory breakdown by type/sensitivity:**
+
+```bash
+curl -s https://api.example.com/stats/memory-summary \
+  -H "X-API-Key: sk-admin-key-here" | jq '.memory_by_type'
+```
+
+**Example response:**
+```json
+{
+  "memory_by_type": {
+    "short_term": 12,
+    "long_term": 456,
+    "episodic": 89
+  },
+  "memory_by_sensitivity": {
+    "pii": 150,
+    "non_pii": 407
+  },
+  "memory_by_scope": {
+    "agent": 380,
+    "tenant": 177
+  },
+  "total_memory": 557,
+  "average_ttl_seconds": 2592000
+}
+```
+
+### Dashboard Options
+
+Choose one of these approaches to build your dashboard:
+
+#### Option 1: Grafana (Recommended for Teams)
+
+Grafana is ideal for teams needing shared, multi-user dashboards with alerting.
+
+**Setup:**
+
+```bash
+# 1. Install Grafana (if not already installed)
+sudo apt-get install grafana-server
+
+# 2. Start Grafana
+sudo systemctl start grafana-server
+sudo systemctl enable grafana-server
+
+# 3. Access web UI
+# Open http://localhost:3000 (default login: admin/admin)
+
+# 4. Add HTTP data source pointing to AMG API
+# Configuration > Data Sources > New > HTTP
+# URL: https://api.example.com
+# Authentication: Custom HTTP Header
+#   Header name: X-API-Key
+#   Header value: sk-admin-key-here
+# Skip TLS verification: false (use certificates)
+```
+
+**Create Dashboard Panel:**
+
+```json
+{
+  "datasource": "AMG-API",
+  "targets": [
+    {
+      "url": "https://api.example.com/stats/memory-summary",
+      "method": "GET",
+      "fields": "memory_by_type"
+    }
+  ],
+  "type": "graph",
+  "title": "Memory Usage by Type"
+}
+```
+
+**Alert Example:**
+
+```bash
+# Alert if certificate expires in 7 days
+curl -s https://api.example.com/system/certificate-status \
+  -H "X-API-Key: sk-admin-key-here" | jq '.days_until_expiry' | \
+  awk '{if ($1 < 7) print "⚠️ Certificate expiring in " $1 " days"}'
+```
+
+For complete Grafana integration, see [DASHBOARD_BUILDER_GUIDE.md — Grafana Section](DASHBOARD_BUILDER_GUIDE.md#grafana-integration).
+
+#### Option 2: Python Flask (Recommended for Simple Internal Dashboards)
+
+Flask is ideal for quick, internal dashboards without external dependencies.
+
+**Setup:**
+
+```bash
+# 1. Install Flask
+pip install flask requests
+
+# 2. Create dashboard app (see template below)
+# 3. Run: python3 dashboard.py
+# 4. Open http://localhost:5000
+```
+
+**Simple Flask Dashboard Template:**
+
+```python
+from flask import Flask, render_template_string
+import requests
+import json
+from datetime import datetime
+
+app = Flask(__name__)
+
+API_URL = "https://api.example.com"
+API_KEY = "sk-admin-key-here"
+HEADERS = {"X-API-Key": API_KEY}
+
+@app.route('/')
+def dashboard():
+    try:
+        # Fetch stats
+        memory = requests.get(f"{API_URL}/stats/memory-summary", headers=HEADERS).json()
+        agents = requests.get(f"{API_URL}/config/agents", headers=HEADERS).json()
+        cert = requests.get(f"{API_URL}/system/certificate-status", headers=HEADERS).json()
+        
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>AMG Dashboard</title>
+            <meta http-equiv="refresh" content="30">
+            <style>
+                body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+                .card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                h1 { color: #333; }
+                .metric { display: inline-block; width: 23%; margin: 1%; padding: 15px; background: #f9f9f9; border-left: 4px solid #007bff; }
+                .metric-value { font-size: 28px; font-weight: bold; color: #007bff; }
+                .metric-label { font-size: 12px; color: #666; text-transform: uppercase; }
+                .alert { background: #fff3cd; border: 1px solid #ffc107; padding: 10px; margin: 10px 0; border-radius: 4px; }
+                .success { background: #d4edda; border: 1px solid #28a745; }
+                .danger { background: #f8d7da; border: 1px solid #f5c6cb; }
+                .timestamp { font-size: 12px; color: #999; margin-top: 10px; }
+            </style>
+        </head>
+        <body>
+            <h1>🛡️ AMG Dashboard</h1>
+            
+            <div class="card">
+                <h2>Memory Statistics</h2>
+                <div class="metric">
+                    <div class="metric-value">{{ memory.total_memory }}</div>
+                    <div class="metric-label">Total Items</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ memory.memory_by_type.long_term }}</div>
+                    <div class="metric-label">Long-term</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ memory.memory_by_type.episodic }}</div>
+                    <div class="metric-label">Episodic</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ memory.memory_by_sensitivity.pii }}</div>
+                    <div class="metric-label">PII Items</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Registered Agents</h2>
+                <div class="metric-value">{{ agents.total_agents }}</div>
+                <div class="metric-label">Active Agents</div>
+            </div>
+            
+            <div class="card">
+                <h2>SSL Certificate</h2>
+                <div class="metric">
+                    <div class="metric-value">{{ cert.days_until_expiry }}</div>
+                    <div class="metric-label">Days Until Expiry</div>
+                </div>
+                {% if cert.days_until_expiry < 7 %}
+                <div class="alert danger">
+                    ⚠️ Certificate expiring in {{ cert.days_until_expiry }} days
+                </div>
+                {% elif cert.days_until_expiry < 30 %}
+                <div class="alert">
+                    ℹ️ Certificate expires in {{ cert.days_until_expiry }} days
+                </div>
+                {% else %}
+                <div class="alert success">
+                    ✅ Certificate valid for {{ cert.days_until_expiry }} more days
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="timestamp">Last updated: {{ now }}</div>
+        </body>
+        </html>
+        ''', memory=memory, agents=agents, cert=cert, now=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    except Exception as e:
+        return f"<h1>Error:</h1><p>{str(e)}</p>"
+
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=5000, debug=False)
+```
+
+For complete Flask integration, see [DASHBOARD_BUILDER_GUIDE.md — Flask Section](DASHBOARD_BUILDER_GUIDE.md#python-flask-dashboard).
+
+#### Option 3: React/Node.js (Recommended for Modern Web Apps)
+
+React is ideal for interactive, real-time dashboards with custom widgets.
+
+**Setup:**
+
+```bash
+# 1. Create React app
+npx create-react-app amg-dashboard
+cd amg-dashboard
+
+# 2. Install dependencies
+npm install axios
+
+# 3. Add component (see template below)
+# 4. Run: npm start
+```
+
+**Simple React Component:**
+
+```jsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const AMGDashboard = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get('https://api.example.com/stats/memory-summary', {
+          headers: { 'X-API-Key': 'sk-admin-key-here' }
+        });
+        setStats(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+      <h1>🛡️ AMG Dashboard</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+        <div style={{ padding: '20px', background: '#f0f0f0', borderRadius: '8px' }}>
+          <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+            {stats?.total_memory}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>Total Memory Items</div>
+        </div>
+        <div style={{ padding: '20px', background: '#f0f0f0', borderRadius: '8px' }}>
+          <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+            {stats?.memory_by_sensitivity.pii}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>PII Items</div>
+        </div>
+        <div style={{ padding: '20px', background: '#f0f0f0', borderRadius: '8px' }}>
+          <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+            {Math.round(stats?.average_ttl_seconds / 86400)}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>Avg TTL (days)</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AMGDashboard;
+```
+
+For complete React integration, see [DASHBOARD_BUILDER_GUIDE.md — React Section](DASHBOARD_BUILDER_GUIDE.md#nodejs-react-dashboard).
+
+#### Option 4: Custom Script / Command-Line
+
+Use shell scripts for simple monitoring and alerting.
+
+**Certificate Expiry Monitor:**
+
+```bash
+#!/bin/bash
+# monitor-cert.sh
+
+API_URL="https://api.example.com"
+API_KEY="sk-admin-key-here"
+ALERT_EMAIL="ops@example.com"
+
+while true; do
+  CERT=$(curl -s "$API_URL/system/certificate-status" \
+    -H "X-API-Key: $API_KEY")
+  
+  DAYS=$(echo "$CERT" | jq '.days_until_expiry')
+  
+  if [ "$DAYS" -lt 7 ]; then
+    echo "⚠️ Certificate expiring in $DAYS days!" | \
+      mail -s "AMG Certificate Alert" "$ALERT_EMAIL"
+  fi
+  
+  sleep 3600  # Check hourly
+done
+```
+
+**Memory Growth Monitor:**
+
+```bash
+#!/bin/bash
+# monitor-memory.sh
+
+API_URL="https://api.example.com"
+API_KEY="sk-admin-key-here"
+
+PREV_COUNT=0
+
+while true; do
+  CURRENT=$(curl -s "$API_URL/stats/memory-summary" \
+    -H "X-API-Key: $API_KEY" | jq '.total_memory')
+  
+  if [ "$CURRENT" -gt "$((PREV_COUNT * 2))" ]; then
+    echo "⚠️ Memory count doubled: $PREV_COUNT → $CURRENT"
+  fi
+  
+  PREV_COUNT=$CURRENT
+  sleep 300  # Check every 5 minutes
+done
+```
+
+### Setup Summary
+
+| Tool | Complexity | Best For | Setup Time |
+|------|-----------|----------|-----------|
+| Grafana | Medium | Teams, multi-user, alerting | 15 min |
+| Flask | Low | Quick internal dashboards | 5 min |
+| React | Medium | Modern web apps, real-time UI | 10 min |
+| Shell Script | Very Low | Simple monitoring, cron jobs | 2 min |
+
+### Authentication Setup
+
+All dashboard APIs require an admin API key. Set it up:
+
+**Development (Local):**
+
+```bash
+export AMG_API_KEYS="sk-admin-key-here:amg-admin"
+python3 run_api.py
+```
+
+**Production (Systemd):**
+
+```bash
+# 1. Edit environment file
+sudo nano /etc/default/amg-api
+
+# 2. Add admin key
+AMG_API_KEYS="sk-admin-key-here:amg-admin,sk-agent-key:agent-1"
+
+# 3. Restart service
+sudo systemctl restart amg-api
+```
+
+**Best Practices:**
+
+- Use strong, random API keys: `openssl rand -hex 32`
+- Store admin keys in a secrets manager (HashiCorp Vault, AWS Secrets Manager)
+- Rotate keys quarterly
+- Audit all admin API access in the audit log
+- Use separate keys for different dashboards/teams
+
+### Monitoring & Alerting
+
+**Alert on Policy Violations:**
+
+```bash
+# Export recent denials
+curl -s "https://api.example.com/audit/export?operation=deny" \
+  -H "X-API-Key: sk-admin-key-here" | \
+  jq '.records | length'  # Number of denied operations
+
+# Alert if threshold exceeded
+if [ "$(result)" -gt 10 ]; then
+  echo "⚠️ High number of policy denials detected"
+fi
+```
+
+**Alert on Agent Disables:**
+
+```bash
+# Export recent disables
+curl -s "https://api.example.com/audit/export?operation=disable" \
+  -H "X-API-Key: sk-admin-key-here" | \
+  jq '.records[] | "\(.timestamp): Agent \(.agent_id) disabled"'
+```
+
+### For More Details
+
+Complete API reference, advanced examples, and integration patterns are documented in:
+
+👉 **[DASHBOARD_BUILDER_GUIDE.md](DASHBOARD_BUILDER_GUIDE.md)**
+
+---
+
+## 7. Security & Best Practices
 
 ### API Key Management
 
@@ -902,7 +1385,7 @@ for log in logs:
 
 ---
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 ### Tests Failing
 
