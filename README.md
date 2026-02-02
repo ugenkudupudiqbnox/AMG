@@ -4,7 +4,8 @@
 
 # Agent Memory Governance (AMG) 
 
-[![Unit Tests](https://github.com/ugenkudupudiqbnox/AMG/actions/workflows/ci.yml/badge.svg)](https://github.com/ugenkudupudiqbnox/AMG/actions/workflows/ci.yml)
+<!-- Project Status & Quality -->
+[![Unit Tests](https://github.com/ugenkudupudiqbnox/AMG/actions/workflows/ci.yml/badge.svg)](https://github.com/ugenkudupudiqbnox/AMG/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-early--development-orange)](#project-status)
 [![Security Policy](https://img.shields.io/badge/security-policy-important)](SECURITY.md)
