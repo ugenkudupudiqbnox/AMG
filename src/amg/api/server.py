@@ -97,6 +97,12 @@ class WriteResponse(BaseModel):
     decision: str
 
 
+class KillSwitchRequest(BaseModel):
+    """Request for kill switch actions."""
+    reason: str = Field(default="No reason provided")
+    actor_id: str = Field(default="api")
+
+
 # ============================================================
 # Dependency Injection
 # ============================================================
@@ -171,6 +177,17 @@ def create_app():
             # Check kill switch first
             allowed, reason = kill_switch.check_allowed(request.agent_id, "write")
             if not allowed:
+                # Log denial
+                audit = AuditRecord(
+                    agent_id=request.agent_id,
+                    operation="write",
+                    policy_version="1.0.0",
+                    decision="denied",
+                    reason=f"kill_switch_{reason}",
+                    actor_id="system",
+                    metadata={"memory_type": request.memory_type}
+                )
+                storage.write_audit_record(audit)
                 raise AgentDisabledError(f"Write not allowed: {reason}")
             # Map request to Memory type
             memory_type_map = {
@@ -346,8 +363,30 @@ def create_app():
                 detail=f"Context build failed: {str(e)}"
             )
 
+    @app.get("/audit/export")
+    def export_audit_logs(
+        agent_id: Optional[str] = None,
+        limit: int = 1000,
+        storage=Depends(get_storage),
+        authenticated_agent_id: str = Depends(verify_api_key),
+    ):
+        """Export audit logs for compliance/analysis."""
+        try:
+            logs = storage.get_audit_log(agent_id=agent_id)
+            return {
+                "records": [log.to_dict() for log in logs[-limit:]],
+                "count": len(logs),
+                "timestamp": datetime.utcnow()
+            }
+        except Exception as e:
+            logger.error(f"Export failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Export failed: {str(e)}"
+            )
+
     @app.get("/audit/{request_id}", response_model=dict)
-    def get_audit_log(
+    def get_audit_by_request(
         request_id: str,
         storage=Depends(get_storage),
         authenticated_agent_id: str = Depends(verify_api_key),
@@ -395,8 +434,8 @@ def create_app():
     @app.post("/agent/{agent_id}/disable")
     def disable_agent(
         agent_id: str,
-        reason: str = "No reason provided",
-        actor_id: str = "api",
+        request: KillSwitchRequest,
+        storage=Depends(get_storage),
         kill_switch=Depends(get_kill_switch),
         authenticated_agent_id: str = Depends(verify_api_key),
     ):
@@ -404,9 +443,11 @@ def create_app():
         try:
             audit = kill_switch.disable(
                 agent_id=agent_id,
-                reason=reason,
-                actor_id=actor_id,
+                reason=request.reason,
+                actor_id=request.actor_id,
             )
+            # Persist audit record
+            storage.write_audit_record(audit)
             return {
                 "agent_id": agent_id,
                 "status": "disabled",
@@ -420,11 +461,41 @@ def create_app():
                 detail=f"Disable failed: {str(e)}"
             )
 
+    @app.post("/agent/{agent_id}/enable")
+    def enable_agent(
+        agent_id: str,
+        request: KillSwitchRequest,
+        storage=Depends(get_storage),
+        kill_switch=Depends(get_kill_switch),
+        authenticated_agent_id: str = Depends(verify_api_key),
+    ):
+        """Enable a disabled/frozen agent."""
+        try:
+            audit = kill_switch.enable(
+                agent_id=agent_id,
+                reason=request.reason,
+                actor_id=request.actor_id,
+            )
+            # Persist audit record
+            storage.write_audit_record(audit)
+            return {
+                "agent_id": agent_id,
+                "status": "enabled",
+                "timestamp": audit.timestamp,
+                "audit_id": audit.audit_id,
+            }
+        except Exception as e:
+            logger.error(f"Enable failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Enable failed: {str(e)}"
+            )
+
     @app.post("/agent/{agent_id}/freeze")
     def freeze_agent_writes(
         agent_id: str,
-        reason: str = "No reason provided",
-        actor_id: str = "api",
+        request: KillSwitchRequest,
+        storage=Depends(get_storage),
         kill_switch=Depends(get_kill_switch),
         authenticated_agent_id: str = Depends(verify_api_key),
     ):
@@ -432,9 +503,11 @@ def create_app():
         try:
             audit = kill_switch.freeze_writes(
                 agent_id=agent_id,
-                reason=reason,
-                actor_id=actor_id,
+                reason=request.reason,
+                actor_id=request.actor_id,
             )
+            # Persist audit record
+            storage.write_audit_record(audit)
             return {
                 "agent_id": agent_id,
                 "status": "frozen",

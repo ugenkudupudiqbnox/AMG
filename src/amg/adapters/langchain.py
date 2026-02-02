@@ -123,15 +123,22 @@ class AMGChatMessageHistory(BaseChatMessageHistory):
         
         content = f"{prefix}{message.content}"
         
-        # Write to AMG storage
-        # Note: In a real integration, we'd use record_memory pattern
-        self.storage.write(
+        # Write to AMG storage using the correct Interface
+        from ..types import Memory, MemoryPolicy
+        memory = Memory(
             agent_id=self.agent_id,
             content=content,
-            memory_type=self.memory_type,
-            sensitivity=self.sensitivity,
-            scope=self.scope,
-            provenance={"session_id": self.session_id, "source": "langchain_adapter"}
+            policy=MemoryPolicy(
+                memory_type=MemoryType.LONG_TERM if self.memory_type == "long_term" else MemoryType.SHORT_TERM,
+                sensitivity=Sensitivity.PII if self.sensitivity == "pii" else Sensitivity.NON_PII,
+                scope=Scope.TENANT if self.scope == "tenant" else Scope.AGENT,
+                ttl_seconds=86400 # 24h default
+            )
+        )
+        
+        self.storage.write(
+            memory=memory,
+            policy_metadata={"session_id": self.session_id, "source": "langchain_adapter"}
         )
 
     def clear(self) -> None:

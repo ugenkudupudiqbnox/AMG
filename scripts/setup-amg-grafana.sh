@@ -20,7 +20,7 @@ DOMAIN="soc.qbnox.com"
 SUBDOMAIN="grafana.${DOMAIN}"
 EMAIL="ugen@qbnox.com"
 GRAFANA_USER="admin"
-GRAFANA_PASS="admin"
+GRAFANA_PASS="admin123#"
 GRAFANA_PORT="3100"
 AMG_API_URL="https://api.soc.qbnox.com"
 

@@ -418,6 +418,30 @@ class PostgresStorageAdapter(StorageAdapter):
         except Exception:
             return False
 
+    def write_audit_record(self, record: AuditRecord) -> None:
+        """Persist an externally generated audit record."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # Ensure signature
+        if not hasattr(record, 'signature') or not record.signature:
+            object.__setattr__(record, 'signature', self._sign_record(record))
+
+        cursor.execute("""
+            INSERT INTO audit_log (
+                audit_id, timestamp, agent_id, request_id, operation,
+                memory_id, policy_version, decision, reason, actor_id,
+                metadata, signature
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            record.audit_id, record.timestamp.isoformat(), record.agent_id,
+            record.request_id, record.operation, record.memory_id,
+            record.policy_version, record.decision, record.reason,
+            record.actor_id, json.dumps(record.metadata), record.signature,
+        ))
+        conn.commit()
+        self._close_conn(conn)
+
     def _row_to_memory(self, row: tuple) -> Memory:
         """Convert database row to Memory."""
         # Row indices: (0: memory_id, 1: agent_id, 2: content, 3: memory_type, 

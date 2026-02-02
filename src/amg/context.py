@@ -66,35 +66,48 @@ class GovernedContextBuilder:
         self.policy_version = policy_version
 
     def build(self, request: ContextRequest) -> GovernedContext:
-        """Build context with governance enforcement.
-        
-        Enforcement layer (in order):
-        1. Agent identity validation
-        2. Kill switch check
-        3. Memory-type filtering
-        4. TTL enforcement
-        5. Sensitivity filtering
-        6. Scope isolation
-        7. Token budget enforcement
-        8. Audit logging
-        
-        Args:
-            request: ContextRequest with agent_id and filters
-            
-        Returns:
-            GovernedContext (already filtered by policy)
-            
-        Raises:
-            AgentDisabledError: If agent is disabled
-            PolicyEnforcementError: If policy violation detected
-        """
+        """Build context with governance enforcement."""
+        return self._build_context(
+            agent_id=request.agent_id,
+            request_id=request.request_id,
+            memory_filters=request.filters,
+            max_items=request.max_items,
+            max_tokens=request.max_tokens
+        )
+
+    def build_context(
+        self,
+        agent_id: str,
+        memory_filters: Optional[Dict[str, Any]] = None,
+        max_tokens: int = 4000,
+        max_items: int = 50,
+    ) -> GovernedContext:
+        """Simplified context building helper."""
+        from uuid import uuid4
+        return self._build_context(
+            agent_id=agent_id,
+            request_id=str(uuid4()),
+            memory_filters=memory_filters or {},
+            max_tokens=max_tokens,
+            max_items=max_items
+        )
+
+    def _build_context(
+        self,
+        agent_id: str,
+        request_id: str,
+        memory_filters: Dict[str, Any],
+        max_items: int,
+        max_tokens: int
+    ) -> GovernedContext:
+        """Core context building logic."""
         # Step 1: Agent identity validation
-        if not request.agent_id:
+        if not agent_id:
             raise PolicyEnforcementError("agent_id required")
 
         # Step 2: Kill switch check
         allowed, reason = self.kill_switch.check_allowed(
-            request.agent_id, OperationType.READ
+            agent_id, OperationType.READ
         )
         if not allowed:
             raise AgentDisabledError(f"Agent blocked: {reason}")
@@ -102,43 +115,41 @@ class GovernedContextBuilder:
         # Step 3-7: Query with retrieval guard
         # StorageAdapter.query() enforces all governance constraints
         policy_check = PolicyCheck(
-            agent_id=request.agent_id,
-            allowed_scopes=self._determine_allowed_scopes(request),
+            agent_id=agent_id,
+            allowed_scopes=[Scope.AGENT, Scope.TENANT],
         )
 
         memories, audit = self.storage.query(
-            filters=self._build_filters(request),
-            agent_id=request.agent_id,
+            filters=memory_filters,
+            agent_id=agent_id,
             policy_check=policy_check,
         )
 
         # Step 7: Token budget enforcement
         # Truncate if necessary
         truncated_memories, token_count = self._enforce_token_budget(
-            memories, request.max_tokens
+            memories, max_tokens
         )
         if len(truncated_memories) < len(memories):
             audit.metadata["truncated_by_token_budget"] = True
-            audit.metadata["tokens_dropped"] = token_count - request.max_tokens
+            audit.metadata["tokens_dropped"] = token_count - max_tokens
 
         # Step 8: Audit logging (already done by storage.query)
-        audit.metadata["requested_by_agent"] = request.agent_id
+        audit.metadata["requested_by_agent"] = agent_id
         audit.metadata["token_count"] = token_count
-        audit.metadata["request_id"] = request.request_id
+        audit.metadata["request_id"] = request_id
 
         return GovernedContext(
-            agent_id=request.agent_id,
-            request_id=request.request_id,
-            memories=truncated_memories[: request.max_items],
+            agent_id=agent_id,
+            request_id=request_id,
+            memories=truncated_memories[:max_items],
             metadata={
                 "token_count": token_count,
-                "returned_count": len(truncated_memories[: request.max_items]),
+                "returned_count": len(truncated_memories[:max_items]),
                 "filtered_count": audit.metadata.get("filtered_count", 0),
                 "total_examined": audit.metadata.get("total_records_examined", 0),
-                "audit_id": audit.audit_id,
-                "policy_version": self.policy_version,
             },
-            audit_id=audit.audit_id,
+            audit_id=audit.audit_id
         )
 
     # Private helpers

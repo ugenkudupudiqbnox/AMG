@@ -114,6 +114,38 @@ class KillSwitch:
 
         return audit
 
+    def enable(
+        self, agent_id: str, reason: str, actor_id: str
+    ) -> AuditRecord:
+        """Enable a disabled/frozen agent (full operations allowed).
+        
+        Args:
+            agent_id: Agent to enable
+            reason: Reason for enabling
+            actor_id: Admin/actor performing enable
+            
+        Returns:
+            AuditRecord of this action
+        """
+        self._agent_states[agent_id] = AgentState.ENABLED
+
+        audit = AuditRecord(
+            agent_id=agent_id,
+            operation="enable",
+            policy_version="1.0.0",
+            decision="allowed",
+            reason=reason,
+            actor_id=actor_id,
+            metadata={
+                "state": AgentState.ENABLED.value,
+                "actor_id": actor_id,
+            },
+        )
+        object.__setattr__(audit, "signature", self._sign_record(audit))
+        self._audit_log[audit.audit_id] = audit
+
+        return audit
+
     def freeze_writes(
         self, agent_id: str, reason: str, actor_id: str
     ) -> AuditRecord:
@@ -166,31 +198,6 @@ class KillSwitch:
 
         return audit_records
 
-    def enable(self, agent_id: str, actor_id: str) -> AuditRecord:
-        """Re-enable disabled or frozen agent.
-        
-        Args:
-            agent_id: Agent to enable
-            actor_id: Admin performing enable
-            
-        Returns:
-            AuditRecord of this action
-        """
-        self._agent_states[agent_id] = AgentState.ENABLED
-
-        audit = AuditRecord(
-            agent_id=agent_id,
-            operation="enable",
-            policy_version="1.0.0",
-            decision="allowed",
-            reason="agent_reenabled",
-            actor_id=actor_id,
-            metadata={"state": AgentState.ENABLED.value},
-        )
-        object.__setattr__(audit, "signature", self._sign_record(audit))
-        self._audit_log[audit.audit_id] = audit
-
-        return audit
 
     def get_status(self, agent_id: str) -> AgentStatus:
         """Get current status of agent.

@@ -152,3 +152,11 @@ class StorageAdapter(ABC):
     def health_check(self) -> bool:
         """Check if storage backend is operational."""
         pass
+
+    @abstractmethod
+    def write_audit_record(self, record: AuditRecord) -> None:
+        """Persist an externally generated audit record.
+        
+        Used for governance events like kill-switch activations.
+        """
+        pass

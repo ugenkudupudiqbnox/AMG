@@ -234,6 +234,13 @@ class InMemoryStorageAdapter(StorageAdapter):
         """In-memory adapter is always healthy."""
         return True
 
+    def write_audit_record(self, record: AuditRecord) -> None:
+        """Persist an externally generated audit record."""
+        # Ensure it has a signature if missing
+        if not hasattr(record, 'signature') or not record.signature:
+            object.__setattr__(record, 'signature', self._sign_record(record))
+        self._audit_log.append(record)
+
     # Private helpers
 
     def _passes_filters(self, memory: Memory, filters: Dict[str, Any]) -> bool:
