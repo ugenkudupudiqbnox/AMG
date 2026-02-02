@@ -135,7 +135,14 @@
           "path": "/stats/audit-logs",
           "urlPath": "/stats/audit-logs",
           "queryType": "json",
-          "jsonPath": "$"
+          "jsonPath": "$",
+          "fields": [
+            { "name": "Timestamp", "jsonPath": "$.[*].timestamp" },
+            { "name": "Agent ID", "jsonPath": "$.[*].agent_id" },
+            { "name": "Operation", "jsonPath": "$.[*].operation" },
+            { "name": "Decision", "jsonPath": "$.[*].decision" },
+            { "name": "Reason", "jsonPath": "$.[*].reason" }
+          ]
         }
       ],
       "title": "Audit Log Trace",
@@ -144,5 +151,5 @@
   ],
   "title": "Agent Memory Governance V2",
   "uid": "amg-gov-v2",
-  "version": 21
+  "version": 22
 }
