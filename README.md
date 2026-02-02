@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/images/header.png" alt="ai-governor" style="width:600px"/>
+</p>
+
 # Agent Memory Governance (AMG) 
 
 > Governance before intelligence. Control before autonomy.
