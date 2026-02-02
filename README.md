@@ -8,6 +8,19 @@ Governance before intelligence. Control before autonomy.
 
 ---
 
+## 📚 Documentation
+
+**Complete documentation is available in [docs/](./docs/INDEX.md)**
+
+**Quick Links:**
+- **[Architecture](./docs/architecture/)** - System design and implementation
+- **[Governance](./docs/governance/)** - Policy definitions and threat model
+- **[Deployment](./docs/deployment/)** - Infrastructure setup guides
+- **[Dashboards](./docs/dashboards/)** - Grafana monitoring and KPIs
+- **[User Guides](./docs/guides/)** - Operator documentation
+
+---
+
 ## Why This Project Exists
 
 AI agents are no longer simple chatbots.
