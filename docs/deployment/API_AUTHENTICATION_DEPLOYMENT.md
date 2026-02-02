@@ -280,7 +280,7 @@ services:
 
 ```bash
 # Copy service file
-sudo cp amg-api.service /etc/systemd/system/
+sudo cp scripts/amg-api.service /etc/systemd/system/
 
 # Reload systemd
 sudo systemctl daemon-reload

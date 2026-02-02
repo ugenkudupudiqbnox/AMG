@@ -92,7 +92,7 @@
 
 ### Core Code (2 files)
 - `src/amg/api/auth.py` (107 lines) - Authentication module
-- `amg-api.service` (15 lines) - Systemd service
+- `scripts/amg-api.service` (15 lines) - Systemd service
 
 ### Tests (1 file)
 - `tests/test_api_authentication.py` (450 lines) - 32 auth tests

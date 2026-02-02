@@ -80,7 +80,7 @@ curl -H "X-API-Key: sk-prod" http://localhost:8000/health
 
 ```bash
 # Copy service file
-sudo cp amg-api.service /etc/systemd/system/
+sudo cp scripts/amg-api.service /etc/systemd/system/
 
 # Create environment file
 sudo tee /home/ubuntu/AMG/.env > /dev/null <<EOF

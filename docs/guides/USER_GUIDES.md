@@ -392,7 +392,7 @@ volumes:
 
 ```bash
 # Copy service file
-sudo cp amg-api.service /etc/systemd/system/
+sudo cp scripts/amg-api.service /etc/systemd/system/
 
 # Enable and start
 sudo systemctl daemon-reload

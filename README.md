@@ -51,13 +51,12 @@ AMG/
 │   └── phases/                        # Historical phases
 │
 ├── scripts/                           # Automation scripts
+│   ├── amg-api.service              # Systemd service file
 │   ├── setup-https.sh                # HTTPS setup script
 │   └── setup-grafana.sh              # Grafana setup script
 │
-├── config/                            # Configuration files
-│   └── amg-api-https.conf            # Nginx HTTPS config
-│
-└── amg-api.service                    # Systemd service file
+└── config/                            # Configuration files
+    └── amg-api-https.conf            # Nginx HTTPS config
 ```
 
 ---

@@ -281,7 +281,7 @@ docker run -p 8000:8000 \
 
 ### 2. Systemd (Linux)
 ```bash
-sudo cp amg-api.service /etc/systemd/system/
+sudo cp scripts/amg-api.service /etc/systemd/system/
 sudo systemctl enable amg-api
 sudo systemctl start amg-api
 ```

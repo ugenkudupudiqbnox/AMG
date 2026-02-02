@@ -10,7 +10,7 @@
 ### Deployment & Operations
 1. **[API_AUTHENTICATION_DEPLOYMENT.md](API_AUTHENTICATION_DEPLOYMENT.md)** - Authentication setup, deployment guide
 2. **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** - Step-by-step deployment procedures
-3. **[amg-api.service](amg-api.service)** - Systemd service file (Linux)
+3. **[amg-api.service](../../scripts/amg-api.service)** - Systemd service file (Linux)
 
 ### API Reference
 1. **[PHASE_5_HTTP_API.md](PHASE_5_HTTP_API.md)** - Complete API endpoint reference
@@ -48,7 +48,7 @@ Start here:
 1. DEPLOYMENT_CHECKLIST.md - Deploy step-by-step
 2. API_AUTHENTICATION_DEPLOYMENT.md - Setup & monitoring
 3. SECURITY.md - Security requirements
-4. amg-api.service - Use systemd service
+4. scripts/amg-api.service - Use systemd service
 
 ### For API Users / Client Developers
 Start here:
@@ -170,7 +170,9 @@ AMG/
 │  ├─ Deployment Documentation
 │  ├─ DEPLOYMENT_CHECKLIST.md (step-by-step)
 │  ├─ API_AUTHENTICATION_DEPLOYMENT.md (auth & deploy)
-│  ├─ amg-api.service (systemd service)
+│  │
+│  ├─ Automation & Configuration
+│  ├─ scripts/amg-api.service (systemd service)
 │  │
 │  ├─ Phase Reports
 │  ├─ PHASE_4_COMPLETION.md
