@@ -7,7 +7,7 @@ from datetime import datetime
 from uuid import uuid4
 import logging
 
-from amg.adapters import InMemoryStorageAdapter
+from amg.adapters import InMemoryStorageAdapter, PostgresStorageAdapter
 from amg.kill_switch import KillSwitch
 from amg.context import GovernedContextBuilder
 from amg.storage import PolicyCheck
@@ -116,7 +116,8 @@ def get_storage():
     """Get storage adapter instance."""
     global _storage
     if _storage is None:
-        _storage = InMemoryStorageAdapter()
+        # Use PostgresStorageAdapter (SQLite file) for persistence
+        _storage = PostgresStorageAdapter(db_path="amg.db")
     return _storage
 
 
@@ -150,6 +151,40 @@ def create_app():
         description="REST API for deterministic, auditable agent memory",
         version="1.0.0",
     )
+
+    @app.get("/")
+    def read_root():
+        """Root endpoint for health and stats - returns everything flat for Grafana."""
+        try:
+            storage = get_storage()
+            all_memories = storage.get_all_memories() if hasattr(storage, 'get_all_memories') else []
+            
+            # Simple flat stats for maximum Grafana compatibility
+            stats = {
+                "total_memories": len(all_memories),
+                "long_term": 0,
+                "short_term": 0,
+                "episodic": 0,
+                "pii": 0,
+                "non_pii": 0,
+                "expired_count": 0,
+            }
+            
+            for mem in all_memories:
+                m_type = mem.get("memory_type", "unknown")
+                if m_type in stats:
+                    stats[m_type] += 1
+                
+                sens = mem.get("sensitivity", "unknown")
+                if sens in stats:
+                    stats[sens] += 1
+                    
+                if mem.get("is_expired"):
+                    stats["expired_count"] += 1
+            
+            return stats
+        except Exception:
+            return {"status": "online", "message": "AMG Governance API"}
 
     @app.get("/health")
     def health_check():
@@ -575,13 +610,13 @@ def create_app():
                 try:
                     start = datetime.fromisoformat(start_date) if start_date else datetime.min
                     end = datetime.fromisoformat(end_date) if end_date else datetime.max
-                    logs = [log for log in logs if start <= log.get("timestamp", datetime.min) <= end]
+                    logs = [log for log in logs if start <= (log.timestamp if hasattr(log, "timestamp") else datetime.min) <= end]
                 except ValueError:
                     raise ValueError("Invalid date format. Use ISO format: 2026-02-01")
             
             # Filter by operation if provided
             if operation:
-                logs = [log for log in logs if log.get("operation") == operation]
+                logs = [log for log in logs if (log.operation if hasattr(log, "operation") else None) == operation]
             
             return {
                 "count": len(logs),
@@ -644,6 +679,15 @@ def create_app():
             if all_memories:
                 stats["average_ttl_seconds"] = total_ttl // len(all_memories)
             
+            # Simplified flat distributions for easier Grafana mapping
+            stats["type_counts"] = {k: v for k, v in stats["by_type"].items()}
+            stats["sensitivity_counts"] = {k: v for k, v in stats["by_sensitivity"].items()}
+
+            # Format for Grafana
+            stats["type_distribution"] = [{"name": k, "value": v} for k, v in stats["by_type"].items()]
+            stats["sensitivity_distribution"] = [{"name": k, "value": v} for k, v in stats["by_sensitivity"].items()]
+            stats["scope_distribution"] = [{"name": k, "value": v} for k, v in stats["by_scope"].items()]
+            
             return stats
         except Exception as e:
             logger.error(f"Memory summary failed: {e}")
@@ -651,6 +695,48 @@ def create_app():
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Memory summary failed: {str(e)}"
             )
+
+    @app.get("/stats/audit-summary")
+    def audit_summary(
+        authenticated_agent_id: str = Depends(verify_api_key),
+    ):
+        """Simplified audit summary for Grafana."""
+        storage = get_storage()
+        try:
+            logs = storage.get_audit_log(limit=1000)
+            summary = {}
+            for log in logs:
+                agent_id = log.agent_id
+                summary[agent_id] = summary.get(agent_id, 0) + 1
+            
+            return [{"agent_id": k, "count": v} for k, v in summary.items()]
+        except Exception as e:
+            logger.error(f"Audit summary failed: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/stats/audit-logs")
+    def audit_logs(
+        limit: int = 50,
+        authenticated_agent_id: str = Depends(verify_api_key),
+    ):
+        """Raw audit logs for Grafana table view."""
+        storage = get_storage()
+        try:
+            logs = storage.get_audit_log(limit=limit)
+            results = []
+            for log in logs:
+                results.append({
+                    "timestamp": log.timestamp.isoformat(),
+                    "agent_id": log.agent_id,
+                    "operation": log.operation,
+                    "decision": log.decision,
+                    "reason": log.reason,
+                    "request_id": log.request_id
+                })
+            return results
+        except Exception as e:
+            logger.error(f"Audit logs failed: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/stats/agent-activity")
     def agent_activity(
@@ -672,7 +758,7 @@ def create_app():
             
             agent_stats = {}
             for log in logs:
-                agent_id = log.get("agent_id", "unknown")
+                agent_id = log.agent_id if hasattr(log, "agent_id") else "unknown"
                 if agent_id not in agent_stats:
                     agent_stats[agent_id] = {
                         "operations_count": 0,
@@ -681,9 +767,9 @@ def create_app():
                     }
                 
                 agent_stats[agent_id]["operations_count"] += 1
-                agent_stats[agent_id]["last_activity"] = log.get("timestamp", datetime.utcnow())
+                agent_stats[agent_id]["last_activity"] = log.timestamp if hasattr(log, "timestamp") else datetime.utcnow()
                 
-                op = log.get("operation", "unknown")
+                op = log.operation if hasattr(log, "operation") else "unknown"
                 agent_stats[agent_id]["operations"][op] = agent_stats[agent_id]["operations"].get(op, 0) + 1
             
             return {

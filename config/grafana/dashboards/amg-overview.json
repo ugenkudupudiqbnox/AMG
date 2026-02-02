@@ -1,179 +1,148 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
-  },
   "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": null,
-  "links": [],
-  "liveNow": false,
+  "refresh": "5s",
   "panels": [
     {
-      "datasource": {
-        "type": "marcusolsson-json-datasource",
-        "uid": "AMG-API"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 0,
-        "y": 0
-      },
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
       "id": 1,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
+          "calcs": ["lastNotNull"],
           "values": false
-        },
-        "textMode": "auto"
+        }
       },
-      "pluginVersion": "10.0.0",
       "targets": [
         {
-          "datasource": {
-            "type": "marcusolsson-json-datasource",
-            "uid": "AMG-API"
-          },
-          "method": "GET",
-          "path": "/stats/memory-summary",
           "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/",
+          "urlPath": "/",
           "queryType": "json",
-          "jsonPath": "$.total_memories"
+          "jsonPath": "$",
+          "fields": [
+            {
+              "name": "total_memories",
+              "jsonPath": "$.total_memories"
+            }
+          ]
         }
       ],
       "title": "Total Memories",
       "type": "stat"
     },
     {
-      "datasource": {
-        "type": "marcusolsson-json-datasource",
-        "uid": "AMG-API"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 6,
-        "y": 0
-      },
-      "id": 2,
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 5,
       "options": {
-        "displayLabels": [
-          "percent",
-          "name"
-        ],
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "pieType": "donut",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
+          "calcs": ["lastNotNull"],
           "values": false
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
         }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "marcusolsson-json-datasource",
-            "uid": "AMG-API"
-          },
-          "method": "GET",
-          "path": "/stats/memory-summary",
           "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/",
+          "urlPath": "/",
           "queryType": "json",
-          "jsonPath": "$.by_type"
+          "jsonPath": "$",
+          "fields": [
+            {
+              "name": "expired_count",
+              "jsonPath": "$.expired_count"
+            }
+          ]
+        }
+      ],
+      "title": "Expired Memories",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 2,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right" },
+        "pieType": "donut",
+        "reduceOptions": {
+          "values": true,
+          "calcs": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/",
+          "urlPath": "/",
+          "queryType": "json",
+          "jsonPath": "$",
+          "fields": [
+            { "name": "long_term", "jsonPath": "$.long_term" },
+            { "name": "short_term", "jsonPath": "$.short_term" },
+            { "name": "episodic", "jsonPath": "$.episodic" }
+          ]
         }
       ],
       "title": "Memory by Type",
       "type": "piechart"
+    },
+    {
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 3,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right" },
+        "reduceOptions": {
+          "values": true,
+          "calcs": []
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/",
+          "urlPath": "/",
+          "queryType": "json",
+          "jsonPath": "$",
+          "fields": [
+            { "name": "pii", "jsonPath": "$.pii" },
+            { "name": "non_pii", "jsonPath": "$.non_pii" }
+          ]
+        }
+      ],
+      "title": "Memory Sensitivity",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 12 },
+      "id": 4,
+      "options": { "showHeader": true },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "marcusolsson-json-datasource", "uid": "AMG-API" },
+          "method": "GET",
+          "path": "/stats/audit-logs",
+          "urlPath": "/stats/audit-logs",
+          "queryType": "json",
+          "jsonPath": "$"
+        }
+      ],
+      "title": "Audit Log Trace",
+      "type": "table"
     }
   ],
-  "schemaVersion": 38,
-  "style": "dark",
-  "tags": [
-    "amg",
-    "governance"
-  ],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-6h",
-    "to": "now"
-  },
-  "timepicker": {},
-  "timezone": "",
-  "title": "AMG Governance Overview",
-  "uid": "amg-overview",
-  "version": 1,
-  "weekStart": ""
+  "title": "Agent Memory Governance V2",
+  "uid": "amg-gov-v2",
+  "version": 21
 }

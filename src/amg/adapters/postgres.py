@@ -361,7 +361,7 @@ class PostgresStorageAdapter(StorageAdapter):
             self._close_conn(conn)
 
     def get_audit_log(self, agent_id: Optional[str] = None, start_time: Optional[datetime] = None,
-                     end_time: Optional[datetime] = None) -> List[AuditRecord]:
+                     end_time: Optional[datetime] = None, limit: int = 100) -> List[AuditRecord]:
         """Retrieve audit log."""
         conn = self._get_conn()
         cursor = conn.cursor()
@@ -383,7 +383,7 @@ class PostgresStorageAdapter(StorageAdapter):
                 params.append(end_time.isoformat())
 
             where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
-            cursor.execute(f"SELECT * FROM audit_log WHERE {where_sql} ORDER BY timestamp ASC", params)
+            cursor.execute(f"SELECT * FROM audit_log WHERE {where_sql} ORDER BY timestamp DESC LIMIT ?", params + [limit])
 
             records = []
             for row in cursor.fetchall():
@@ -441,6 +441,30 @@ class PostgresStorageAdapter(StorageAdapter):
         ))
         conn.commit()
         self._close_conn(conn)
+
+    def get_all_memories(self) -> List[Dict[str, Any]]:
+        """Retrieve all non-deleted memories for statistics."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT * FROM memory WHERE is_deleted = 0")
+            rows = cursor.fetchall()
+            
+            results = []
+            for row in rows:
+                mem = self._row_to_memory(row)
+                results.append({
+                    "memory_id": mem.memory_id,
+                    "agent_id": mem.agent_id,
+                    "memory_type": mem.policy.memory_type.value,
+                    "sensitivity": mem.policy.sensitivity.value,
+                    "scope": mem.policy.scope.value,
+                    "ttl_seconds": mem.policy.ttl_seconds,
+                    "is_expired": mem.is_expired(),
+                })
+            return results
+        finally:
+            self._close_conn(conn)
 
     def _row_to_memory(self, row: tuple) -> Memory:
         """Convert database row to Memory."""

@@ -129,7 +129,8 @@ class StorageAdapter(ABC):
     @abstractmethod
     def get_audit_log(self, agent_id: Optional[str] = None,
                       start_time: Optional[datetime] = None,
-                      end_time: Optional[datetime] = None) -> List[AuditRecord]:
+                      end_time: Optional[datetime] = None,
+                      limit: int = 100) -> List[AuditRecord]:
         """Retrieve audit log for compliance/analysis.
         
         Must:

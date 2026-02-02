@@ -215,7 +215,8 @@ class InMemoryStorageAdapter(StorageAdapter):
 
     def get_audit_log(self, agent_id: Optional[str] = None,
                       start_time: Optional[datetime] = None,
-                      end_time: Optional[datetime] = None) -> List[AuditRecord]:
+                      end_time: Optional[datetime] = None,
+                      limit: int = 100) -> List[AuditRecord]:
         """Retrieve audit log with optional filtering."""
         results = self._audit_log
 
@@ -228,7 +229,9 @@ class InMemoryStorageAdapter(StorageAdapter):
         if end_time:
             results = [r for r in results if r.timestamp <= end_time]
 
-        return results
+        # Sort by timestamp DESC and apply limit
+        results.sort(key=lambda x: x.timestamp, reverse=True)
+        return results[:limit]
 
     def health_check(self) -> bool:
         """In-memory adapter is always healthy."""
@@ -240,6 +243,21 @@ class InMemoryStorageAdapter(StorageAdapter):
         if not hasattr(record, 'signature') or not record.signature:
             object.__setattr__(record, 'signature', self._sign_record(record))
         self._audit_log.append(record)
+
+    def get_all_memories(self) -> List[Dict[str, Any]]:
+        """Retrieve all memories for statistics."""
+        results = []
+        for mem in self._memories.values():
+            results.append({
+                "memory_id": mem.memory_id,
+                "agent_id": mem.agent_id,
+                "memory_type": mem.policy.memory_type.value,
+                "sensitivity": mem.policy.sensitivity.value,
+                "scope": mem.policy.scope.value,
+                "ttl_seconds": mem.policy.ttl_seconds,
+                "is_expired": mem.is_expired(),
+            })
+        return results
 
     # Private helpers
 
