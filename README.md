@@ -36,6 +36,7 @@ Built for auditability, compliance, and deterministic behavior.
 - **[Deployment](./docs/deployment/)** - Infrastructure setup guides
 - **[Dashboards](./docs/dashboards/)** - Grafana monitoring and KPIs
 - **[User Guides](./docs/guides/)** - Operator documentation
+- **[Quick Start Guide](GOVERNANCE_QUICKSTART.md)** - Governance Quick Start Guide
 
 ---
 
