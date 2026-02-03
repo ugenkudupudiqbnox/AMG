@@ -197,6 +197,17 @@
 
 ---
 
+## Phase 8: Graph Support ✅ COMPLETE
+✅ Governed Graph Storage
+
+**1. Neo4j Adapter** (`src/amg/adapters/neo4j.py`)
+- Full `StorageAdapter` implementation
+- Memory-to-Node mapping with property-level governance
+- Cypher-based retrieval guard execution (optimized)
+- Deterministic audit logging in Graph
+
+---
+
 ## Production Deployment & Monitoring ✅ COMPLETE
 ✅ Infrastructure as Code and Observability
 
@@ -224,8 +235,9 @@
 | HTTP API Layer | ✅ Complete | 28 | RESTful implementation |
 | Vector Support | ✅ Complete | 4 | In-memory & Postgres |
 | External Vectors | ✅ Complete | 2 | Pinecone, Qdrant, Milvus |
+| Graph Support | ✅ Complete | 1 | Neo4j |
 | Authentication | ✅ Complete | 32 | API Key security |
-| **TOTAL** | **✅ READY** | **168** | **100% Passing** |
+| **TOTAL** | **✅ READY** | **171** | **100% Passing** |
 
 ---
 

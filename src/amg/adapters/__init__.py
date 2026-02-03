@@ -5,6 +5,7 @@ from .postgres import PostgresStorageAdapter
 from .pinecone import PineconeStorageAdapter
 from .qdrant import QdrantStorageAdapter
 from .milvus import MilvusStorageAdapter
+from .neo4j import Neo4jStorageAdapter
 from .langgraph import LangGraphMemoryAdapter, LangGraphStateSchema
 
 __all__ = [
@@ -13,6 +14,7 @@ __all__ = [
     "PineconeStorageAdapter",
     "QdrantStorageAdapter",
     "MilvusStorageAdapter",
+    "Neo4jStorageAdapter",
     "LangGraphMemoryAdapter",
     "LangGraphStateSchema",
 ]

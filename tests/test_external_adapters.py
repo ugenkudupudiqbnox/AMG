@@ -1,6 +1,6 @@
 
 import pytest
-from amg.adapters import PineconeStorageAdapter, QdrantStorageAdapter, MilvusStorageAdapter
+from amg.adapters import PineconeStorageAdapter, QdrantStorageAdapter, MilvusStorageAdapter, Neo4jStorageAdapter
 from amg.storage import StorageAdapter
 
 def test_adapters_implement_interface():
@@ -8,7 +8,7 @@ def test_adapters_implement_interface():
     assert issubclass(PineconeStorageAdapter, StorageAdapter)
     assert issubclass(QdrantStorageAdapter, StorageAdapter)
     assert issubclass(MilvusStorageAdapter, StorageAdapter)
-
+    assert issubclass(Neo4jStorageAdapter, StorageAdapter)
 def test_adapters_raise_importerror_without_deps():
     """Verify that adapters raise descriptive ImportError if dependencies are missing."""
     # This test is useful if we assume the environment doesn't have these installed
