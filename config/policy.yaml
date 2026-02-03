@@ -1,0 +1,49 @@
+# Agent Memory Governance (AMG) Policy Schema
+# This file defines the formal governance contracts for AI agent memory.
+
+# 1. Retention (TTL) Rules
+# Defined in seconds. Higher sensitivity usually requires lower TTL.
+ttl:
+  pii_agent_scope: 86400        # 1 day (Strict isolation)
+  pii_tenant_scope: 604800      # 7 days
+  non_pii_agent_scope: 2592000  # 30 days
+  non_pii_tenant_scope: 7776000 # 90 days
+  default: 86400
+
+# 2. Context Curation (Budgeting)
+# Prevents prompt injection and token overflow by capping retrieval.
+context_budget:
+  max_tokens: 4000
+  max_memory_items: 50
+  preferred_memory_types:
+    - short_term
+    - episodic
+    - long_term
+
+# 3. Sensitivity Classification
+# Declarative tagging tags for the policy engine. 
+# (Note: AMG V1 uses declarative tagging, not auto-detection).
+sensitivity_tags:
+  pii_patterns:
+    - email_address
+    - phone_number
+    - credit_card
+    - ssn
+    - birth_date
+  non_pii_patterns:
+    - timestamp
+    - agent_id
+    - request_id
+
+# 4. Scope Isolation (Non-Bypassable)
+# Core guarantees for multi-tenant and multi-agent systems.
+isolation:
+  enforce_strict_tenant_boundary: true
+  allow_cross_agent_read: false
+  allow_cross_tenant_read: false
+
+# 5. Policy Metadata
+metadata:
+  version: "1.0.0"
+  description: "Standard Enterprise Governance Contract"
+  owner: "compliance-team"

@@ -29,13 +29,25 @@ class PolicyEngine:
     Non-bypassable: agents cannot override policy decisions.
     """
 
-    def __init__(self, policy_config: Optional[Dict[str, Any]] = None):
+    def __init__(self, policy_config: Optional[Dict[str, Any]] = None, config_path: Optional[str] = None):
         """Initialize with optional policy configuration.
         
         Args:
             policy_config: Optional policy rules in declarative format
+            config_path: Path to a YAML configuration file
         """
-        self.config = policy_config or self._default_config()
+        if policy_config:
+            self.config = policy_config
+        elif config_path:
+            import yaml
+            try:
+                with open(config_path, 'r') as f:
+                    self.config = yaml.safe_load(f)
+            except Exception as e:
+                print(f"Warning: Could not load policy from {config_path}: {e}")
+                self.config = self._default_config()
+        else:
+            self.config = self._default_config()
         self.policy_version = "1.0.0"
 
     def _default_config(self) -> Dict[str, Any]:
