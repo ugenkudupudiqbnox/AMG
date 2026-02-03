@@ -1,141 +1,129 @@
 # Governance Model
 
-Agent Memory Governance (AMG) implements a **governance-first control model** for AI agents.
-All agent memory, context construction, and control actions are governed **outside the LLM and agent runtime**.
+## Purpose
+This document defines how governance is applied to AI agents using Agent Memory Governance (AMG).
+Governance focuses on accountability, control, auditability, and incident response.
 
-This document defines how governance works in AMG.
-
----
-
-## 1. Governance Objectives
-
-AMG governance is designed to:
-
-- Treat agent memory as a regulated enterprise data asset
-- Enforce deterministic and explainable agent behavior
-- Enable rapid incident response and accountability
-- Support SOC 2 and ISO 27001 control alignment by design
-- Prevent silent policy bypass or uncontrolled autonomy
-
-Governance is a **core system property**, not an add-on feature.
+AMG treats governance as **infrastructure**, not application logic. All controls operate
+outside the LLM and agent runtime.
 
 ---
 
-## 2. Governance Roles (Conceptual)
+## One-Page Governance Architecture
+
+```
+┌──────────────┐
+│ Agent / LLM  │
+│ (Untrusted)  │
+└──────┬───────┘
+       │ context request
+┌──────▼──────────┐
+│ Governance Plane │
+│ ────────────── │
+│ Policy Engine   │
+│ Retrieval Guard │
+│ Audit Logger    │
+│ Kill Switch     │
+└──────┬──────────┘
+       │ approved context
+┌──────▼──────────┐
+│ Memory Stores   │
+│ (TTL enforced) │
+└────────────────┘
+```
+
+All agent memory access and context construction is governed, logged, and revocable.
+
+---
+
+## Governance Roles
 
 AMG defines the following governance roles:
 
-### Agent Owner
-- Accountable for agent purpose and scope
-- Responsible for policies applied to the agent
-- Owner of remediation actions after incidents
+- **Agent Owner**  
+  Accountable for the agent’s scope, behavior, and policy assignment.
 
-### Governance Administrator
-- Defines and updates memory and access policies
-- Reviews governance events and violations
-- Manages retention and deletion rules
+- **Governance Administrator**  
+  Defines and updates memory and access policies.
 
-### Operator
-- Authorized to pause, disable, or freeze agents
-- Executes incident response actions
-- Does not modify policies
+- **Operator**  
+  Authorized to pause, disable, or freeze agents during incidents.
 
-Roles are enforced via API and configuration in V1.
+Role enforcement is API-driven in V1; no UI is required.
 
 ---
 
-## 3. Policy Governance
+## Governance Events
 
-- All policies are defined as **policy-as-code**
-- Policies are versioned and immutable once applied
-- Policy evaluation occurs **before every memory read or write**
-- Policy changes apply prospectively by default
-- Retroactive enforcement requires explicit action
-
-Policies are the source of truth for agent memory behavior.
-
----
-
-## 4. Governance Events
-
-The following are first-class governance events in AMG:
+The following are first-class governance events:
 
 - Memory write rejection
-- TTL expiry and deletion
+- TTL expiry and automatic deletion
 - Policy violation
-- Policy version change
-- Agent disable / kill switch activation
+- Policy creation or change
+- Agent disable / enable
 - Memory write freeze
-- Manual deletion (right-to-forget)
+- Manual deletion (right to forget)
 
-All governance events:
-- are timestamped
-- are immutable
-- include an initiator (system or human)
-- are recorded in the audit log
-- are replayable
+All governance events are:
+- immutable
+- timestamped
+- attributable (human or system)
+- available for audit replay
 
 ---
 
-## 5. Human-in-the-Loop Controls
+## Policy Governance
 
-AMG supports human intervention for **risk containment**, not approval workflows.
+- Policies are defined as configuration (policy-as-code)
+- Policies are versioned
+- All changes are logged
+- Policies are evaluated **before** any memory read or write
+- Policy changes are non-retroactive by default
 
-Supported controls:
-- Disable agent
-- Freeze memory writes
+Optional re-evaluation can be triggered explicitly.
+
+---
+
+## Human-in-the-Loop Controls
+
+AMG supports human intervention through:
+
+- Agent disable
+- Memory write freeze
 - Read-only mode
 - Global shutdown
 
-Approval UIs and workflow engines are explicitly out of scope for V1.
+These controls are designed for **incident response**, not approval workflows.
+Approval workflows are explicitly out of scope for V1.
 
 ---
 
-## 6. Accountability & Auditability
+## Accountability & Auditability
 
 Every agent action can be traced to:
-- a specific agent
-- a specific policy version
-- a specific context snapshot
-- a specific output
+
+- Agent ID
+- Policy version
+- Context snapshot (memory IDs used)
+- Output hash
+- Timestamp
 
 This enables:
-- post-incident review
+- post-incident investigation
 - compliance audits
 - responsibility assignment
 
-AMG does not inspect or modify LLM reasoning.
-
 ---
 
-## 7. Governance FAQ
+## Non-Goals (Intentional)
 
-### Who is responsible for an agent’s behavior?
-Every agent has an explicit **Agent Owner**, recorded and traceable.
+AMG governance does NOT include:
 
-### Can agents bypass governance checks?
-No. All memory and context access is mediated by AMG.
+- Agent reasoning or planning
+- Learning or adaptation
+- Multi-agent memory sharing
+- Workflow approvals
+- UI dashboards
 
-### How is data retention enforced?
-Persistent memory requires an explicit TTL. Memory without a TTL is rejected or deleted.
-
-### What happens on policy violations?
-Violations generate governance events and may trigger agent disablement.
-
-### Are policy changes retroactive?
-No, unless explicitly re-evaluated.
-
-### Can humans intervene immediately?
-Yes. Kill switch and memory freeze are mandatory controls.
-
----
-
-## 8. Policy Change Example
-
-### Original Policy (v1)
-```yaml
-policy_id: episodic-pii-policy
-version: 1
-memory_type: episodic
-sensitivity: pii
-ttl_seconds: 2592000   # 30 days
+These exclusions preserve determinism, auditability, and trust.
