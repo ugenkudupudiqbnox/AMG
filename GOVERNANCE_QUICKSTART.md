@@ -160,9 +160,13 @@ This prevents unexpected behavior changes.
 ## 9. Common Mistakes to Avoid
 
 ❌ Letting agents store memory without TTL
+
 ❌ Bypassing AMG for “performance”
+
 ❌ Treating audit logs as optional
+
 ❌ Mixing governance with reasoning logic
+
 ❌ Enabling learning in V1
 
 ---
