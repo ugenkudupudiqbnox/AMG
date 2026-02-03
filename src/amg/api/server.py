@@ -736,6 +736,8 @@ def create_app():
     def audit_logs(
         agent_id: Optional[str] = None,
         operation: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
         authenticated_agent_id: str = Depends(verify_api_key),
@@ -743,9 +745,26 @@ def create_app():
         """Raw audit logs for Grafana table view."""
         storage = get_storage()
         try:
+            # Parse times if provided
+            dt_start = None
+            if start_time:
+                try:
+                    dt_start = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                except ValueError:
+                    pass
+            
+            dt_end = None
+            if end_time:
+                try:
+                    dt_end = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                except ValueError:
+                    pass
+
             logs = storage.get_audit_log(
                 agent_id=agent_id, 
                 operation=operation, 
+                start_time=dt_start,
+                end_time=dt_end,
                 limit=limit, 
                 offset=offset
             )

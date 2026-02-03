@@ -337,7 +337,7 @@
                     <h3 class="fw-bold mb-4">Security Audit Explorer</h3>
                     <div class="card mb-4">
                         <div class="card-body">
-                            <div class="row g-3">
+                            <div class="row g-3 mb-3">
                                 <div class="col-md-4">
                                     <label class="form-label small fw-bold">Agent ID</label>
                                     <input type="text" id="filter-agent" class="form-control" placeholder="Filter by agent...">
@@ -362,6 +362,19 @@
                                 </div>
                                 <div class="col-md-2 d-flex align-items-end">
                                     <button class="btn btn-primary w-100" onclick="auditOffset=0; fetchAuditLogs()">Search</button>
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Start Time</label>
+                                    <input type="datetime-local" id="filter-start" class="form-control">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">End Time</label>
+                                    <input type="datetime-local" id="filter-end" class="form-control">
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button class="btn btn-outline-secondary w-100" onclick="document.getElementById('filter-start').value=''; document.getElementById('filter-end').value=''; auditOffset=0; fetchAuditLogs()">Clear Dates</button>
                                 </div>
                             </div>
                         </div>
@@ -623,6 +636,8 @@
             const limit = limitOverride || document.getElementById('filter-limit').value;
             const agentId = document.getElementById('filter-agent') ? document.getElementById('filter-agent').value : '';
             const operation = document.getElementById('filter-op') ? document.getElementById('filter-op').value : '';
+            const startTime = document.getElementById('filter-start') ? document.getElementById('filter-start').value : '';
+            const endTime = document.getElementById('filter-end') ? document.getElementById('filter-end').value : '';
             const offset = limitOverride ? 0 : auditOffset;
             
             // Show progress bar
@@ -633,6 +648,8 @@
             let url = `/stats/audit-logs?limit=${limit}&offset=${offset}`;
             if (!limitOverride && agentId) url += `&agent_id=${agentId}`;
             if (!limitOverride && operation) url += `&operation=${operation}`;
+            if (!limitOverride && startTime) url += `&start_time=${new Date(startTime).toISOString()}`;
+            if (!limitOverride && endTime) url += `&end_time=${new Date(endTime).toISOString()}`;
 
             const data = await apiFetch(url);
             
