@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 import hashlib
 import json
+import math
+
 
 from ..types import Memory, MemoryPolicy, AuditRecord, Scope, Sensitivity
 from ..storage import StorageAdapter, PolicyCheck
@@ -164,6 +166,7 @@ class InMemoryStorageAdapter(StorageAdapter):
         
         results = []
         filtered_count = 0
+        query_vector = filters.get("vector")
 
         for memory in self._memories.values():
             # Apply filters
@@ -192,6 +195,21 @@ class InMemoryStorageAdapter(StorageAdapter):
                 continue
 
             results.append(memory)
+
+        # Apply vector similarity if present
+        if query_vector and results:
+            def get_sim(m):
+                if not m.vector or len(m.vector) != len(query_vector):
+                    return -1.0
+                dot = sum(a * b for a, b in zip(m.vector, query_vector))
+                m1 = math.sqrt(sum(a * a for a in m.vector))
+                m2 = math.sqrt(sum(b * b for b in query_vector))
+                if m1 == 0 or m2 == 0:
+                    return -1.0
+                return dot / (m1 * m2)
+            
+            # Sort by similarity descending
+            results.sort(key=get_sim, reverse=True)
 
         # Create audit record
         audit = AuditRecord(

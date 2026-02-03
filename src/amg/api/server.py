@@ -35,6 +35,7 @@ class MemoryWriteRequest(BaseModel):
     sensitivity: str = Field(..., description="pii | non_pii")
     scope: str = Field(default="agent", description="agent | tenant")
     ttl_seconds: Optional[int] = Field(None, description="Custom TTL (optional)")
+    vector: Optional[list[float]] = Field(None, description="Optional embedding")
 
 
 class MemoryQueryRequest(BaseModel):
@@ -43,6 +44,7 @@ class MemoryQueryRequest(BaseModel):
     memory_types: Optional[list] = Field(None, description="Filter by type")
     sensitivity: Optional[str] = Field(None, description="Filter by sensitivity")
     scope: Optional[str] = Field(None, description="Filter by scope")
+    vector: Optional[list[float]] = Field(None, description="Vector for similarity search")
     limit: int = Field(default=50, ge=1, le=500, description="Result limit")
 
 
@@ -63,6 +65,7 @@ class MemoryResponse(BaseModel):
     scope: str
     created_at: datetime
     expires_at: datetime
+    vector: Optional[list[float]] = None
 
 
 class ContextResponse(BaseModel):
@@ -245,6 +248,7 @@ def create_app():
                 agent_id=request.agent_id,
                 content=request.content,
                 policy=policy,
+                vector=request.vector,
             )
 
             audit = storage.write(memory, {"request_id": str(uuid4())})
@@ -286,6 +290,8 @@ def create_app():
                 filters["sensitivity"] = request.sensitivity
             if request.scope:
                 filters["scope"] = request.scope
+            if request.vector:
+                filters["vector"] = request.vector
 
             policy_check = PolicyCheck(
                 agent_id=request.agent_id,
@@ -308,6 +314,7 @@ def create_app():
                         "scope": m.policy.scope.value,
                         "created_at": m.created_at,
                         "expires_at": m.expires_at,
+                        "vector": m.vector,
                     }
                     for m in memories[:request.limit]  # Apply limit on result
                 ],
@@ -362,6 +369,7 @@ def create_app():
                         "scope": m.policy.scope.value,
                         "created_at": m.created_at,
                         "expires_at": m.expires_at,
+                        "vector": m.vector,
                     }
                     for m in context.memories
                 ],

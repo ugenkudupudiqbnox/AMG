@@ -11,6 +11,7 @@ Production-grade storage backend with:
 import sqlite3
 import json
 import hashlib
+import math
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 
@@ -61,9 +62,16 @@ class PostgresStorageAdapter(StorageAdapter):
                 expires_at TEXT NOT NULL,
                 created_by TEXT NOT NULL,
                 is_deleted BOOLEAN DEFAULT 0,
-                deleted_at TEXT
+                deleted_at TEXT,
+                vector TEXT
             )
         """)
+
+        # For existing databases, ensure vector column exists
+        try:
+            cursor.execute("ALTER TABLE memory ADD COLUMN vector TEXT")
+        except sqlite3.OperationalError:
+            pass # Already exists
 
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_memory_agent_id ON memory(agent_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_memory_created_at ON memory(created_at)")
@@ -142,8 +150,8 @@ class PostgresStorageAdapter(StorageAdapter):
                 INSERT INTO memory (
                     memory_id, agent_id, content, memory_type, sensitivity, scope,
                     ttl_seconds, allow_read, allow_write, provenance,
-                    created_at, expires_at, created_by, is_deleted
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    created_at, expires_at, created_by, is_deleted, vector
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 memory.memory_id, memory.agent_id, memory.content,
                 memory.policy.memory_type.value, memory.policy.sensitivity.value,
@@ -151,6 +159,7 @@ class PostgresStorageAdapter(StorageAdapter):
                 int(memory.policy.allow_read), int(memory.policy.allow_write),
                 memory.policy.provenance, memory.created_at.isoformat(),
                 memory.expires_at.isoformat(), memory.created_by, 0,
+                json.dumps(memory.vector) if memory.vector else None,
             ))
 
             audit = AuditRecord(
@@ -290,6 +299,7 @@ class PostgresStorageAdapter(StorageAdapter):
             results = []
             filtered_count = 0
             now = datetime.utcnow()
+            query_vector = filters.get("vector")
 
             for row in rows:
                 memory = self._row_to_memory(row)
@@ -307,6 +317,21 @@ class PostgresStorageAdapter(StorageAdapter):
                     continue
 
                 results.append(memory)
+
+            # Apply vector similarity if present
+            if query_vector and results:
+                def get_sim(m):
+                    if not m.vector or len(m.vector) != len(query_vector):
+                        return -1.0
+                    dot = sum(a * b for a, b in zip(m.vector, query_vector))
+                    m1 = math.sqrt(sum(a * a for a in m.vector))
+                    m2 = math.sqrt(sum(b * b for b in query_vector))
+                    if m1 == 0 or m2 == 0:
+                        return -1.0
+                    return dot / (m1 * m2)
+                
+                # Sort by similarity descending
+                results.sort(key=get_sim, reverse=True)
 
             audit = AuditRecord(
                 agent_id=agent_id,
@@ -429,7 +454,7 @@ class PostgresStorageAdapter(StorageAdapter):
         """Convert database row to Memory."""
         # Row indices: (0: memory_id, 1: agent_id, 2: content, 3: memory_type, 
         # 4: sensitivity, 5: scope, 6: ttl_seconds, 7: allow_read, 8: allow_write,
-        # 9: provenance, 10: created_at, 11: expires_at, 12: created_by, 13: is_deleted, 14: deleted_at)
+        # 9: provenance, 10: created_at, 11: expires_at, 12: created_by, 13: is_deleted, 14: deleted_at, 15: vector)
         return Memory(
             memory_id=row[0],
             agent_id=row[1],
@@ -446,6 +471,7 @@ class PostgresStorageAdapter(StorageAdapter):
             created_at=datetime.fromisoformat(row[10]),
             expires_at=datetime.fromisoformat(row[11]),
             created_by=row[12],
+            vector=json.loads(row[15]) if len(row) > 15 and row[15] else None,
         )
 
     def _create_denied_audit(self, agent_id: str, operation: str, memory_id: Optional[str], reason: str) -> AuditRecord:

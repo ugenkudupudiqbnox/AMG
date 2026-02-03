@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from uuid import uuid4
 
 
@@ -56,6 +56,7 @@ class Memory:
     memory_id: str = field(default_factory=lambda: str(uuid4()))
     agent_id: str = ""              # Which agent this memory belongs to
     content: str = ""               # The actual memory content
+    vector: Optional[List[float]] = None # Optional embedding for vector search
     policy: MemoryPolicy = field(default_factory=lambda: MemoryPolicy(
         memory_type=MemoryType.LONG_TERM,
         ttl_seconds=86400,

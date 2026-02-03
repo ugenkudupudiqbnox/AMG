@@ -123,6 +123,7 @@ class LangGraphMemoryAdapter:
         sensitivity: str,
         scope: str = "agent",
         provenance: Optional[str] = None,
+        vector: Optional[List[float]] = None,
     ) -> "AuditRecord":
         """Record memory with governance enforcement.
         
@@ -141,6 +142,7 @@ class LangGraphMemoryAdapter:
             sensitivity: pii | non_pii
             scope: agent | tenant
             provenance: Source event (optional)
+            vector: optional embedding vector
             
         Returns:
             AuditRecord of the write operation
@@ -183,6 +185,7 @@ class LangGraphMemoryAdapter:
             content=content,
             policy=policy,
             created_by=agent_id,
+            vector=vector,
         )
         
         # Write through storage with audit

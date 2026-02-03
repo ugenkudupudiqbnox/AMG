@@ -154,6 +154,28 @@
 
 ---
 
+## Phase 6: Vector Support ✅ COMPLETE
+✅ Integrated into Memory and Storage Plane
+
+**1. Data Model Extension**
+- Added `vector: Optional[List[float]]` to `Memory` type
+- Updated API models `MemoryWriteRequest`, `MemoryQueryRequest`, and `MemoryResponse`
+
+**2. Storage Implementation**
+- **InMemoryStorageAdapter**: Python-native cosine similarity for similarity search
+- **PostgresStorageAdapter**: SQL schema extension with JSON/TEXT vector storage and search fallback
+
+**3. API & Framework Integration**
+- Updated `/memory/write` to accept embeddings
+- Updated `/memory/query` and `/context/build` to return vectors and support similarity search via `vector` filter
+- Updated LangGraph adapter to support vector persistence
+
+**4. Comprehensive Tests** (`tests/test_vector_support.py`)
+- Verified persistence across adapters
+- Verified similarity ranking (most similar items first)
+
+---
+
 ## Production Deployment & Monitoring ✅ COMPLETE
 ✅ Infrastructure as Code and Observability
 
@@ -179,16 +201,17 @@
 | Postgres Adapter | ✅ Complete | 20 | Production persistence |
 | LangGraph Adapter | ✅ Complete | 27 | Framework integration |
 | HTTP API Layer | ✅ Complete | 28 | RESTful implementation |
+| Vector Support | ✅ Complete | 4 | In-memory & Postgres |
 | Authentication | ✅ Complete | 32 | API Key security |
-| **TOTAL** | **✅ READY** | **164** | **100% Passing** |
+| **TOTAL** | **✅ READY** | **168** | **100% Passing** |
 
 ---
 
 ## Roadmap (Future Enhancements):
 
-1. **Vector Storage Adapters**
+1. **Extended Vector Adapters**
    - Pinecone/Milvus/Qdrant integrations
-   - Policy enforcement for vector similarity search
+   - Hardware-accelerated search policies
 
 2. **Advanced PII Detection**
    - Optional scanning extensions (governed at boundary)
