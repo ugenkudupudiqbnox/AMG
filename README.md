@@ -97,7 +97,13 @@ This script automatically:
 - Configures Nginx reverse proxy and SSL
 - Provisions the AMG API data source and pre-built monitoring dashboards
 
-### 2. Manual Getting Started
+### 2. Management UI
+AMG now includes a built-in management dashboard for real-time governance:
+- **URL**: `https://<your-domain>/ui`
+- **Features**: Audit explorer, Agent kill switches, Memory distribution charts, and Policy transparency.
+- **Authentication**: Requires a valid operator API key.
+
+### 3. Manual Getting Started
 1. **Read**: [README.md](./README.md) (this file)
 2. **Learn**: [docs/INDEX.md](./docs/INDEX.md) - Full documentation hub
 3. **Deploy**: [docs/deployment/](./docs/deployment/) - Setup guides
@@ -306,11 +312,12 @@ This keeps AMG firmly in the **infrastructure layer**, not the intelligence laye
 ## APIs (V1 – Minimal)
 
 ```http
-POST /memory/write
-POST /memory/query
-POST /context/build
-GET  /audit/{request_id}
-POST /agent/disable
+GET  /ui                # Management Dashboard
+POST /memory/write      # Write governed memory
+POST /memory/query      # Query memories with filters
+POST /context/build     # Build governed LLM context
+GET  /audit/{id}        # Retrieve audit trail
+POST /agent/disable     # Instant kill switch
 ```
 
 No SDK lock-in.
