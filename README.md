@@ -99,7 +99,7 @@ This script automatically:
 
 ### 2. Management UI
 AMG now includes a built-in management dashboard for real-time governance:
-- **URL**: `https://<your-domain>/ui`
+- **URL**: `https://api.soc.qbnox.com/ui`
 - **Features**: Audit explorer, Agent kill switches, Global system shutdown, Memory distribution charts, and Policy transparency.
 - **Authentication**: Requires a valid operator API key.
 

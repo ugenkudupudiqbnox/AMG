@@ -875,18 +875,23 @@ def create_app():
         
         Returns list of known agents and their states.
         """
-        kill_switch = get_kill_switch()
+        ks = get_kill_switch()
+        
+        # Get actual states from kill switch
+        prod_state = ks.get_status("prod-agent").state
+        test_state = ks.get_status("test-agent").state
+        
         return {
             "agents": [
                 {
                     "agent_id": "prod-agent",
-                    "enabled": True,
-                    "state": "enabled",
+                    "enabled": prod_state == "enabled",
+                    "state": prod_state,
                 },
                 {
                     "agent_id": "test-agent",
-                    "enabled": True,
-                    "state": "enabled",
+                    "enabled": test_state == "enabled",
+                    "state": test_state,
                 },
             ],
             "note": "Agent list is dynamic - pull from your agent registry",
@@ -916,7 +921,7 @@ def create_app():
                     cert_info[key.strip()] = val.strip()
             
             return {
-                "domain": "soc.qbnox.com",
+                "domain": "api.soc.qbnox.com",
                 "certificate_info": cert_info,
                 "auto_renewal": "enabled",
                 "renewal_schedule": "0,12:00 UTC daily",
@@ -925,7 +930,7 @@ def create_app():
         except Exception as e:
             logger.error(f"Certificate status failed: {e}")
             return {
-                "domain": "soc.qbnox.com",
+                "domain": "api.soc.qbnox.com",
                 "status": "unknown",
                 "error": str(e),
                 "note": "Run: openssl x509 -in /etc/letsencrypt/live/soc.qbnox.com/fullchain.pem -noout -dates",

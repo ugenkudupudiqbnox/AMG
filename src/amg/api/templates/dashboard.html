@@ -552,7 +552,10 @@
             config.agents.forEach(agent => {
                 const div = document.createElement('div');
                 div.className = 'col-md-4';
-                const statusColor = agent.state === 'enabled' ? 'success' : 'danger';
+                let statusColor = 'success';
+                if (agent.state === 'disabled') statusColor = 'danger';
+                if (agent.state === 'frozen') statusColor = 'warning';
+                
                 div.innerHTML = `
                     <div class="card h-100">
                         <div class="card-body">
