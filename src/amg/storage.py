@@ -130,7 +130,8 @@ class StorageAdapter(ABC):
     def get_audit_log(self, agent_id: Optional[str] = None,
                       start_time: Optional[datetime] = None,
                       end_time: Optional[datetime] = None,
-                      limit: int = 100) -> List[AuditRecord]:
+                      limit: int = 100,
+                      offset: int = 0) -> List[AuditRecord]:
         """Retrieve audit log for compliance/analysis.
         
         Must:
@@ -143,6 +144,8 @@ class StorageAdapter(ABC):
             agent_id: Filter by agent (optional)
             start_time: Filter by start time (optional)
             end_time: Filter by end time (optional)
+            limit: Maximum items to return
+            offset: Number of items to skip
             
         Returns:
             List of AuditRecord in chronological order

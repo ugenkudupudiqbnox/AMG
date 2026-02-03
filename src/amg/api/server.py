@@ -602,6 +602,7 @@ def create_app():
         end_date: Optional[str] = None,
         operation: Optional[str] = None,
         limit: int = 10000,
+        offset: int = 0,
         authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Export audit logs for compliance/analysis.
@@ -611,29 +612,36 @@ def create_app():
         - start_date: ISO format (2026-02-01)
         - end_date: ISO format (2026-02-02)
         - operation: write | read | query | disable | freeze
+        - offset: Pagination offset
         
         Returns paginated audit records.
         """
         storage = get_storage()
         try:
-            logs = storage.get_audit_log(agent_id=agent_id, limit=limit)
+            start = None
+            end = None
+            if start_date:
+                start = datetime.fromisoformat(start_date)
+            if end_date:
+                end = datetime.fromisoformat(end_date)
+                
+            logs = storage.get_audit_log(
+                agent_id=agent_id, 
+                start_time=start, 
+                end_time=end, 
+                limit=limit,
+                offset=offset
+            )
             
-            # Filter by date range if provided
-            if start_date or end_date:
-                try:
-                    start = datetime.fromisoformat(start_date) if start_date else datetime.min
-                    end = datetime.fromisoformat(end_date) if end_date else datetime.max
-                    logs = [log for log in logs if start <= (log.timestamp if hasattr(log, "timestamp") else datetime.min) <= end]
-                except ValueError:
-                    raise ValueError("Invalid date format. Use ISO format: 2026-02-01")
-            
-            # Filter by operation if provided
+            # Filter by operation if provided (still needed if storage doesn't support it)
             if operation:
                 logs = [log for log in logs if (log.operation if hasattr(log, "operation") else None) == operation]
             
             return {
                 "count": len(logs),
                 "records": logs,
+                "offset": offset,
+                "limit": limit,
                 "export_timestamp": datetime.utcnow(),
             }
         except Exception as e:
@@ -729,13 +737,21 @@ def create_app():
 
     @app.get("/stats/audit-logs")
     def audit_logs(
+        agent_id: Optional[str] = None,
+        operation: Optional[str] = None,
         limit: int = 50,
+        offset: int = 0,
         authenticated_agent_id: str = Depends(verify_api_key),
     ):
         """Raw audit logs for Grafana table view."""
         storage = get_storage()
         try:
-            logs = storage.get_audit_log(limit=limit)
+            logs = storage.get_audit_log(agent_id=agent_id, limit=limit, offset=offset)
+            
+            # Additional filter for operation if storage doesn't support it directly
+            if operation:
+                logs = [log for log in logs if (log.operation if hasattr(log, "operation") else None) == operation]
+                
             results = []
             for log in logs:
                 results.append({
@@ -746,7 +762,13 @@ def create_app():
                     "reason": log.reason,
                     "request_id": log.request_id
                 })
-            return {"logs": results}
+            return {
+                "logs": results,
+                "limit": limit,
+                "offset": offset,
+                "agent_id": agent_id,
+                "operation": operation
+            }
         except Exception as e:
             logger.error(f"Audit logs failed: {e}")
             raise HTTPException(status_code=500, detail=str(e))

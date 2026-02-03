@@ -132,10 +132,11 @@ class HTTPStorageAdapter(StorageAdapter):
     def get_audit_log(self, agent_id: Optional[str] = None,
                       start_time: Optional[datetime] = None,
                       end_time: Optional[datetime] = None,
-                      limit: int = 100) -> List[AuditRecord]:
+                      limit: int = 100,
+                      offset: int = 0) -> List[AuditRecord]:
         """Proxy audit log retrieval."""
         url = f"{self.api_base_url}/audit/export"
-        params = {"limit": limit}
+        params = {"limit": limit, "offset": offset}
         if agent_id: params["agent_id"] = agent_id
         if start_time: params["start_date"] = start_time.isoformat()
         if end_time: params["end_date"] = end_time.isoformat()

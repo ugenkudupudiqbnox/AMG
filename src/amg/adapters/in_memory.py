@@ -234,7 +234,8 @@ class InMemoryStorageAdapter(StorageAdapter):
     def get_audit_log(self, agent_id: Optional[str] = None,
                       start_time: Optional[datetime] = None,
                       end_time: Optional[datetime] = None,
-                      limit: int = 100) -> List[AuditRecord]:
+                      limit: int = 100,
+                      offset: int = 0) -> List[AuditRecord]:
         """Retrieve audit log with optional filtering."""
         results = self._audit_log
 
@@ -247,9 +248,9 @@ class InMemoryStorageAdapter(StorageAdapter):
         if end_time:
             results = [r for r in results if r.timestamp <= end_time]
 
-        # Sort by timestamp DESC and apply limit
+        # Sort by timestamp DESC and apply limit/offset
         results.sort(key=lambda x: x.timestamp, reverse=True)
-        return results[:limit]
+        return results[offset : offset + limit]
 
     def health_check(self) -> bool:
         """In-memory adapter is always healthy."""

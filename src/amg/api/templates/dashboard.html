@@ -344,15 +344,15 @@
                                     </select>
                                 </div>
                                 <div class="col-md-2 d-flex align-items-end">
-                                    <button class="btn btn-primary w-100" onclick="fetchAuditLogs()">Search</button>
+                                    <button class="btn btn-primary w-100" onclick="auditOffset=0; fetchAuditLogs()">Search</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card">
+                    <div class="card mb-4">
                         <div class="card-body p-0">
                             <div class="table-responsive audit-table-container">
-                                <table class="table table-hover table-sm">
+                                <table class="table table-hover table-sm mb-0">
                                     <thead class="table-light sticky-top">
                                         <tr>
                                             <th>Timestamp</th>
@@ -368,6 +368,15 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                        <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-3">
+                            <span class="text-muted small" id="audit-pagination-info">Showing 0-0 records</span>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item"><button class="page-link" onclick="changeAuditPage(-1)" id="audit-btn-prev" disabled>Previous</button></li>
+                                    <li class="page-item"><button class="page-link" onclick="changeAuditPage(1)" id="audit-btn-next" disabled>Next</button></li>
+                                </ul>
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -515,32 +524,63 @@
             }
         }
 
+        let auditOffset = 0;
+
         async function fetchAuditLogs(limitOverride = null) {
             const limit = limitOverride || document.getElementById('filter-limit').value;
             const agentId = document.getElementById('filter-agent') ? document.getElementById('filter-agent').value : '';
             const operation = document.getElementById('filter-op') ? document.getElementById('filter-op').value : '';
+            const offset = limitOverride ? 0 : auditOffset;
             
-            let url = `/stats/audit-logs?limit=${limit}`;
+            let url = `/stats/audit-logs?limit=${limit}&offset=${offset}`;
+            if (!limitOverride && agentId) url += `&agent_id=${agentId}`;
+            if (!limitOverride && operation) url += `&operation=${operation}`;
+
             const data = await apiFetch(url);
             if (!data) return;
 
             const target = limitOverride ? 'home-audit-tbody' : 'audit-logs-tbody';
             const tbody = document.getElementById(target);
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            data.logs.forEach(log => {
-                const tr = document.createElement('tr');
-                const decisionClass = log.decision === 'allowed' ? 'text-success' : 'text-danger fw-bold';
-                tr.innerHTML = `
-                    <td class="small text-muted">${new Date(log.timestamp).toLocaleTimeString()}</td>
-                    <td class="small fw-bold">${log.agent_id}</td>
-                    <td><span class="badge bg-light text-dark border">${log.operation}</span></td>
-                    <td class="${decisionClass}">${log.decision}</td>
-                    <td class="small text-muted">${log.reason}</td>
-                    <td class="small text-muted font-monospace">${log.request_id ? log.request_id.substring(0,8) : '...'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            if (data.logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No records found</td></tr>`;
+            } else {
+                data.logs.forEach(log => {
+                    const tr = document.createElement('tr');
+                    const decisionClass = log.decision === 'allowed' ? 'text-success' : 'text-danger fw-bold';
+                    tr.innerHTML = `
+                        <td class="small text-muted">${new Date(log.timestamp).toLocaleTimeString()}</td>
+                        <td class="small fw-bold">${log.agent_id}</td>
+                        <td><span class="badge bg-light text-dark border">${log.operation}</span></td>
+                        <td class="${decisionClass}">${log.decision}</td>
+                        <td class="small text-muted">${log.reason}</td>
+                        <td class="small text-muted font-monospace">${log.request_id ? log.request_id.substring(0,8) : '...'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Update pagination UI if it's the explorer
+            if (!limitOverride) {
+                const count = data.logs.length;
+                document.getElementById('audit-pagination-info').innerText = count > 0 
+                    ? `Showing ${offset + 1}-${offset + count} records`
+                    : 'No records found';
+                document.getElementById('audit-btn-prev').disabled = (offset === 0);
+                document.getElementById('audit-btn-next').disabled = (count < limit);
+            }
+        }
+
+        function changeAuditPage(direction) {
+            const limit = parseInt(document.getElementById('filter-limit').value);
+            if (direction > 0) {
+                auditOffset += limit;
+            } else {
+                auditOffset = Math.max(0, auditOffset - limit);
+            }
+            fetchAuditLogs();
         }
 
         async function fetchAgents() {
