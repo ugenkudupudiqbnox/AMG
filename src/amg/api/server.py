@@ -405,6 +405,66 @@ def create_app():
                 detail=f"Context build failed: {str(e)}"
             )
 
+    # ============================================================
+    # Audit & Analytics Endpoints (Admin Only)
+    # ============================================================
+
+    @app.get("/audit/export")
+    def export_audit_logs(
+        agent_id: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        operation: Optional[str] = None,
+        limit: int = 10000,
+        offset: int = 0,
+        authenticated_agent_id: str = Depends(verify_api_key),
+    ):
+        """Export audit logs for compliance/analysis.
+        
+        Filters:
+        - agent_id: Filter by agent ID
+        - start_date: ISO format (2026-02-01)
+        - end_date: ISO format (2026-02-02)
+        - operation: write | read | query | disable | freeze
+        - offset: Pagination offset
+        
+        Returns paginated audit records.
+        """
+        storage = get_storage()
+        try:
+            start = None
+            end = None
+            if start_date:
+                start = datetime.fromisoformat(start_date)
+            if end_date:
+                end = datetime.fromisoformat(end_date)
+                
+            logs = storage.get_audit_log(
+                agent_id=agent_id, 
+                start_time=start, 
+                end_time=end, 
+                limit=limit,
+                offset=offset
+            )
+            
+            # Filter by operation if provided (still needed if storage doesn't support it)
+            if operation:
+                logs = [log for log in logs if (log.operation if hasattr(log, "operation") else None) == operation]
+            
+            return {
+                "count": len(logs),
+                "records": logs,
+                "offset": offset,
+                "limit": limit,
+                "export_timestamp": datetime.utcnow(),
+            }
+        except Exception as e:
+            logger.error(f"Audit export failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Audit export failed: {str(e)}"
+            )
+
     @app.get("/audit/{request_id}", response_model=dict)
     def get_audit_by_request(
         request_id: str,
@@ -589,66 +649,6 @@ def create_app():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Global shutdown failed: {str(e)}"
-            )
-
-    # ============================================================
-    # Audit & Analytics Endpoints (Admin Only)
-    # ============================================================
-
-    @app.get("/audit/export")
-    def export_audit_logs(
-        agent_id: Optional[str] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        operation: Optional[str] = None,
-        limit: int = 10000,
-        offset: int = 0,
-        authenticated_agent_id: str = Depends(verify_api_key),
-    ):
-        """Export audit logs for compliance/analysis.
-        
-        Filters:
-        - agent_id: Filter by agent ID
-        - start_date: ISO format (2026-02-01)
-        - end_date: ISO format (2026-02-02)
-        - operation: write | read | query | disable | freeze
-        - offset: Pagination offset
-        
-        Returns paginated audit records.
-        """
-        storage = get_storage()
-        try:
-            start = None
-            end = None
-            if start_date:
-                start = datetime.fromisoformat(start_date)
-            if end_date:
-                end = datetime.fromisoformat(end_date)
-                
-            logs = storage.get_audit_log(
-                agent_id=agent_id, 
-                start_time=start, 
-                end_time=end, 
-                limit=limit,
-                offset=offset
-            )
-            
-            # Filter by operation if provided (still needed if storage doesn't support it)
-            if operation:
-                logs = [log for log in logs if (log.operation if hasattr(log, "operation") else None) == operation]
-            
-            return {
-                "count": len(logs),
-                "records": logs,
-                "offset": offset,
-                "limit": limit,
-                "export_timestamp": datetime.utcnow(),
-            }
-        except Exception as e:
-            logger.error(f"Audit export failed: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Audit export failed: {str(e)}"
             )
 
     @app.get("/stats/memory-summary")
