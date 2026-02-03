@@ -627,10 +627,20 @@
         }
 
         async function triggerGlobalShutdown() {
-            if (!confirm('CRITICAL: This will disable ALL memory governance operations. Proceed?')) return;
+            if (!confirm('CRITICAL: This will disable ALL memory governance operations system-wide. Proceed?')) return;
             const reason = prompt('Reason for Global Shutdown:', 'Emergency maintenance');
-            // Assuming there is a global endpoint or we loop. The API has agent-specific ones.
-            alert('Global shutdown is not wired to a single endpoint yet. Please disable agents individually.');
+            if (!reason) return;
+            
+            const res = await apiFetch('/system/shutdown', 'POST', { 
+                reason: reason,
+                actor_id: 'operator'
+            });
+            
+            if (res) {
+                alert('GLOBAL SHUTDOWN ACTIVATED: All agent memory operations are now disabled.');
+                fetchAgents();
+                refreshAllData();
+            }
         }
 
         // Init

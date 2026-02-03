@@ -562,6 +562,34 @@ def create_app():
                 detail=f"Status check failed: {str(e)}"
             )
 
+    @app.post("/system/shutdown")
+    def global_shutdown(
+        request: KillSwitchRequest,
+        storage=Depends(get_storage),
+        kill_switch=Depends(get_kill_switch),
+        authenticated_agent_id: str = Depends(verify_api_key),
+    ):
+        """Emergency global shutdown of all agent memory operations."""
+        try:
+            audit = kill_switch.global_shutdown(
+                reason=request.reason,
+                actor_id=request.actor_id,
+            )
+            # Persist audit record
+            storage.write_audit_record(audit)
+            return {
+                "status": "global_shutdown",
+                "timestamp": audit.timestamp,
+                "audit_id": audit.audit_id,
+                "message": "All agents disabled system-wide"
+            }
+        except Exception as e:
+            logger.error(f"Global shutdown failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Global shutdown failed: {str(e)}"
+            )
+
     # ============================================================
     # Audit & Analytics Endpoints (Admin Only)
     # ============================================================
