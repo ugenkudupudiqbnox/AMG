@@ -1,443 +1,389 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>AMG Management UI</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Tailwind CSS CDN -->
+    <script src='https://cdn.tailwindcss.com'></script>
+    <!-- Lucide Icons -->
+    <script src='https://unpkg.com/lucide@latest'></script>
     <style>
-        :root {
-            --amg-primary: #0d6efd;
-            --amg-dark: #212529;
-            --amg-light: #f8f9fa;
-        }
-        body {
-            background-color: #f4f6f9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .sidebar {
-            background-color: var(--amg-dark);
-            min-height: 100vh;
-            color: white;
-        }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 0.5rem;
-            border-radius: 0.25rem;
-        }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            color: white;
-            background-color: rgba(255,255,255,0.1);
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-        .card {
-            border: none;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            margin-bottom: 1.5rem;
-        }
-        .card-header {
-            background-color: white;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            font-weight: 600;
-        }
-        .stat-card {
-            transition: transform 0.2s;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .navbar {
-            background-color: white !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .badge-pii { background-color: #dc3545; }
-        .badge-non_pii { background-color: #198754; }
-        .badge-long_term { background-color: #0dcaf0; }
-        .badge-short_term { background-color: #6c757d; }
-        .badge-episodic { background-color: #ffc107; color: black; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .tab-content.hidden { display: none; }
         .status-indicator {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             display: inline-block;
-            margin-right: 5px;
-        }
-        .status-online { background-color: #198754; }
-        .status-offline { background-color: #dc3545; }
-        .status-frozen { background-color: #ffc107; }
-
-        #api-key-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .audit-table-container {
-            max-height: 500px;
-            overflow-y: auto;
         }
     </style>
 </head>
-<body>
+<body class='bg-zinc-50 text-zinc-950 min-h-screen'>
 
-    <!-- API Key Entry Modal -->
-    <div id="api-key-overlay">
-        <div class="card p-4" style="width: 400px;">
-            <div class="text-center mb-4">
-                <i class="bi bi-shield-lock-fill text-primary" style="font-size: 3rem;"></i>
-                <h4>AMG Management</h4>
-                <p class="text-muted small">Enter your Operator API Key to access governance controls</p>
+    <!-- API Key Entry Overlay -->
+    <div id='api-key-overlay' class='fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4'>
+        <div class='bg-white border border-zinc-200 rounded-xl shadow-lg w-full max-w-md p-8'>
+            <div class='text-center mb-6'>
+                <div class='bg-zinc-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-zinc-600'>
+                    <i data-lucide='shield-check' class='w-8 h-8'></i>
+                </div>
+                <h1 class='text-2xl font-bold tracking-tight'>AMG Governance</h1>
+                <p class='text-zinc-500 text-sm mt-1'>Enter your operator API key to access the control plane.</p>
             </div>
-            <div class="mb-3">
-                <input type="password" id="api-key-input" class="form-control" placeholder="sk-...">
+            <div class='space-y-4'>
+                <div class='space-y-2'>
+                    <input type='password' id='api-key-input' class='w-full px-3 py-2 bg-white border border-zinc-200 rounded-md text-sm ring-offset-white focus:outline-none focus:ring-2 focus:ring-zinc-400' placeholder='sk-...'>
+                </div>
+                <button onclick='saveApiKey()' class='w-full bg-zinc-900 text-zinc-50 hover:bg-zinc-900/90 h-10 px-4 py-2 rounded-md text-sm font-medium transition-colors'>
+                    Authenticate
+                </button>
             </div>
-            <button class="btn btn-primary w-100" onclick="saveApiKey()">Authenticate</button>
         </div>
     </div>
 
-    <div class="container-fluid p-0">
-        <div class="row g-0">
-            <!-- Sidebar -->
-            <div class="col-md-2 d-none d-md-block sidebar p-3">
-                <div class="d-flex align-items-center mb-4 px-2">
-                    <i class="bi bi-memory text-primary me-2" style="font-size: 1.5rem;"></i>
-                    <h5 class="m-0 fw-bold">AMG <span class="text-primary">Plane</span></h5>
+    <div class='flex min-h-screen'>
+        <!-- Sidebar -->
+        <aside class='w-64 border-r border-zinc-200 bg-white hidden md:flex flex-col flex-shrink-0'>
+            <div class='p-6 border-b border-zinc-100'>
+                <div class='flex items-center gap-2'>
+                    <div class='bg-zinc-900 text-white rounded p-1'>
+                        <i data-lucide='database' class='w-5 h-5'></i>
+                    </div>
+                    <span class='font-bold text-lg tracking-tight'>AMG <span class='text-zinc-500 font-medium'>Plane</span></span>
                 </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#" onclick="showTab('dashboard')">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showTab('agents')">
-                            <i class="bi bi-robot"></i> Agents
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showTab('audit')">
-                            <i class="bi bi-list-check"></i> Audit Logs
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showTab('policies')">
-                            <i class="bi bi-journal-text"></i> Policies
-                        </a>
-                    </li>
-                    <hr class="mt-4 mb-3 border-secondary">
-                    <li class="nav-item">
-                        <a class="nav-link text-danger" href="#" onclick="logout()">
-                            <i class="bi bi-box-arrow-left"></i> Logout
-                        </a>
-                    </li>
-                </ul>
             </div>
+            <nav class='flex-1 p-4 space-y-1'>
+                <button onclick="showTab('dashboard')" id='nav-dashboard' class='nav-link w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors bg-zinc-100 text-zinc-950'>
+                    <i data-lucide='layout-dashboard' class='w-4 h-4'></i>
+                    Dashboard
+                </button>
+                <button onclick="showTab('agents')" id='nav-agents' class='nav-link w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950'>
+                    <i data-lucide='cpu' class='w-4 h-4'></i>
+                    Agents
+                </button>
+                <button onclick="showTab('audit')" id='nav-audit' class='nav-link w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950'>
+                    <i data-lucide='clipboard-list' class='w-4 h-4'></i>
+                    Audit Explorer
+                </button>
+                <button onclick="showTab('policies')" id='nav-policies' class='nav-link w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950'>
+                    <i data-lucide='scroll-text' class='w-4 h-4'></i>
+                    Policies
+                </button>
+                <div class='pt-4 mt-4 border-t border-zinc-100'>
+                    <button onclick='logout()' class='w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-red-600 hover:bg-red-50 transition-colors'>
+                        <i data-lucide='log-out' class='w-4 h-4'></i>
+                        Logout
+                    </button>
+                </div>
+            </nav>
+            <div class='p-6 border-t border-zinc-100 text-[10px] text-zinc-400 uppercase tracking-widest font-bold'>
+                Governance v1.0.0
+            </div>
+        </aside>
 
-            <!-- Main Content -->
-            <div class="col-md-10">
-                <!-- Top Navbar -->
-                <nav class="navbar navbar-expand-lg navbar-light px-4">
-                    <div class="container-fluid">
-                        <span class="navbar-brand mb-0 h1 fs-6 text-muted">Management Console</span>
-                        <div class="d-flex align-items-center">
-                            <div class="me-3 d-flex align-items-center">
-                                <label class="small text-muted me-2">Auto-Refresh:</label>
-                                <select id="auto-refresh-select" class="form-select form-select-sm" style="width: auto;" onchange="updateRefreshInterval()">
-                                    <option value="0">Off</option>
-                                    <option value="1000">1s</option>
-                                    <option value="5000">5s</option>
-                                    <option value="10000">10s</option>
-                                    <option value="30000">30s</option>
-                                    <option value="60000">60s</option>
-                                </select>
-                            </div>
-                            <div class="me-3 text-end d-none d-sm-block">
-                                <div class="small fw-semibold" id="cert-status-text">Cert: Valid</div>
-                                <div class="text-muted" style="font-size: 0.7rem;" id="cert-expiry">Expires in 89 days</div>
-                            </div>
-                            <div class="status-indicator status-online"></div>
-                            <span class="small fw-bold">Live</span>
-                        </div>
+        <!-- Main Workspace -->
+        <main class='flex-1 flex flex-col min-w-0 h-screen overflow-hidden'>
+            <!-- Top Navbar -->
+            <header class='h-16 border-b border-zinc-200 bg-white flex items-center justify-between px-8 sticky top-0 z-40 flex-shrink-0'>
+                <div class='flex items-center gap-4'>
+                    <span id='tab-title' class='text-xs font-bold text-zinc-400 uppercase tracking-widest'>System Overview</span>
+                </div>
+                <div class='flex items-center gap-6'>
+                    <div class='flex items-center gap-2'>
+                        <label class='text-[10px] text-zinc-400 font-bold uppercase tracking-wider'>auto-refresh:</label>
+                        <select id='auto-refresh-select' onchange='updateRefreshInterval()' class='bg-transparent text-xs font-bold focus:outline-none border-b border-zinc-200 pb-0.5 outline-none cursor-pointer'>
+                            <option value='0'>Off</option>
+                            <option value='1000'>1s</option>
+                            <option value='5000'>5s</option>
+                            <option value='10000'>10s</option>
+                            <option value='30000'>30s</option>
+                            <option value='60000'>60s</option>
+                        </select>
                     </div>
-                </nav>
+                    <div class='hidden lg:flex flex-col items-end border-l border-zinc-200 pl-6 h-8 justify-center'>
+                        <div class='text-[11px] font-bold text-zinc-900 leading-none tabular-nums' id='cert-status-text'>Cert: Valid</div>
+                        <div class='text-[10px] text-zinc-400 leading-none mt-1 tabular-nums' id='cert-expiry'>Expires in -- days</div>
+                    </div>
+                    <div class='flex items-center gap-2 bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-100'>
+                        <span class='status-indicator bg-emerald-500 animate-pulse'></span>
+                        <span class='text-[10px] font-bold uppercase tracking-tighter'>Live</span>
+                    </div>
+                </div>
+            </header>
 
-                <div id="content-dashboard" class="p-4 tab-content">
-                    <div class="row align-items-center mb-4">
-                        <div class="col-6">
-                            <h3 class="fw-bold m-0 text-dark">System Overview</h3>
-                        </div>
-                        <div class="col-6 text-end">
-                            <button class="btn btn-outline-primary btn-sm me-2" onclick="refreshAllData()">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh
+            <!-- Scrollable Content -->
+            <div class='p-8 flex-1 overflow-y-auto space-y-8'>
+                <!-- Dashboard Tab -->
+                <div id='content-dashboard' class='tab-content space-y-8'>
+                    <div class='flex items-center justify-between'>
+                        <h2 class='text-3xl font-bold tracking-tight'>Metrics</h2>
+                        <div class='flex gap-2'>
+                            <button onclick='refreshAllData()' class='inline-flex items-center justify-center rounded-md text-sm font-medium border border-zinc-200 bg-white hover:bg-zinc-100 h-9 px-3 gap-2 transition-colors'>
+                                <i data-lucide='rotate-cw' class='w-4 h-4 text-zinc-500'></i>
+                                Refresh
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="triggerGlobalShutdown()">
-                                <i class="bi bi-power"></i> Global Shutdown
+                            <button onclick='triggerGlobalShutdown()' class='inline-flex items-center justify-center rounded-md text-sm font-medium bg-red-600 text-zinc-50 hover:bg-red-700 h-9 px-3 gap-2 transition-colors'>
+                                <i data-lucide='power' class='w-4 h-4'></i>
+                                Shutdown
                             </button>
                         </div>
                     </div>
 
-                    <!-- Stats Row -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-3">
-                            <div class="card stat-card text-center p-3">
-                                <p class="text-muted small mb-1">Total Memories</p>
-                                <h2 class="fw-bold mb-0" id="stat-total-memories">0</h2>
+                    <!-- Stats -->
+                    <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+                        <div class='rounded-xl border border-zinc-200 bg-white p-6 shadow-sm'>
+                            <div class='flex items-center gap-2 text-zinc-500 mb-2'>
+                                <i data-lucide='layers' class='w-4 h-4'></i>
+                                <span class='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>Total Memories</span>
                             </div>
+                            <div class='text-3xl font-bold tracking-tighter tabular-nums' id='stat-total-memories'>0</div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card stat-card text-center p-3">
-                                <p class="text-muted small mb-1">Active Agents</p>
-                                <h2 class="fw-bold mb-0" id="stat-active-agents">0</h2>
+                        <div class='rounded-xl border border-zinc-200 bg-white p-6 shadow-sm'>
+                            <div class='flex items-center gap-2 text-zinc-500 mb-2'>
+                                <i data-lucide='activity' class='w-4 h-4'></i>
+                                <span class='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>Active Agents</span>
                             </div>
+                            <div class='text-3xl font-bold tracking-tighter tabular-nums' id='stat-active-agents'>0</div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card stat-card text-center p-3">
-                                <p class="text-muted small mb-1">Audit Events (24h)</p>
-                                <h2 class="fw-bold mb-0" id="stat-audit-events">0</h2>
+                        <div class='rounded-xl border border-zinc-200 bg-white p-6 shadow-sm'>
+                            <div class='flex items-center gap-2 text-zinc-500 mb-2'>
+                                <i data-lucide='list' class='w-4 h-4'></i>
+                                <span class='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>Audit Events (24h)</span>
                             </div>
+                            <div class='text-3xl font-bold tracking-tighter tabular-nums' id='stat-audit-events'>0</div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card stat-card text-center p-3 border-start border-danger border-4">
-                                <p class="text-muted small mb-1">Denied Ops</p>
-                                <h2 class="fw-bold mb-0 text-danger" id="stat-denied-ops">0</h2>
+                        <div class='rounded-xl border border-zinc-200 bg-white p-6 shadow-sm border-l-4 border-l-red-500'>
+                            <div class='flex items-center gap-2 text-zinc-500 mb-2'>
+                                <i data-lucide='shield-alert' class='w-4 h-4 text-red-500'></i>
+                                <span class='text-[10px] font-bold uppercase tracking-widest text-zinc-400'>Denied Ops</span>
                             </div>
+                            <div class='text-3xl font-bold tracking-tighter text-red-600 tabular-nums' id='stat-denied-ops'>0</div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <!-- Distribution Charts -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span>Memory Distribution</span>
-                                    <i class="bi bi-pie-chart text-muted"></i>
+                    <!-- Distributions -->
+                    <div class='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+                        <div class='lg:col-span-1 border border-zinc-200 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col'>
+                            <div class='p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/10'>
+                                <h3 class='font-bold text-[10px] uppercase tracking-widest text-zinc-400'>Memory Engine</h3>
+                                <i data-lucide='pie-chart' class='w-4 h-4 text-zinc-400'></i>
+                            </div>
+                            <div class='p-6 space-y-6 flex-1'>
+                                <div class='space-y-2'>
+                                    <div class='flex justify-between text-[11px] font-bold uppercase tracking-wider'>
+                                        <span class='text-zinc-400'>Long-term</span>
+                                        <span id='dist-lt-text' class='text-zinc-950'>0%</span>
+                                    </div>
+                                    <div class='h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden'>
+                                        <div id='dist-lt-bar' class='h-full bg-zinc-900 transition-all duration-700 ease-in-out' style='width: 0%'></div>
+                                    </div>
                                 </div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between small mb-1">
-                                            <span>Long-term</span>
-                                            <span id="dist-lt-text">0%</span>
-                                        </div>
-                                        <div class="progress" style="height: 10px;">
-                                            <div id="dist-lt-bar" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
-                                        </div>
+                                <div class='space-y-2'>
+                                    <div class='flex justify-between text-[11px] font-bold uppercase tracking-wider'>
+                                        <span class='text-zinc-400'>Short-term</span>
+                                        <span id='dist-st-text' class='text-zinc-950'>0%</span>
                                     </div>
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between small mb-1">
-                                            <span>Short-term</span>
-                                            <span id="dist-st-text">0%</span>
-                                        </div>
-                                        <div class="progress" style="height: 10px;">
-                                            <div id="dist-st-bar" class="progress-bar bg-secondary" role="progressbar" style="width: 0%"></div>
-                                        </div>
+                                    <div class='h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden'>
+                                        <div id='dist-st-bar' class='h-full bg-zinc-400 transition-all duration-700 ease-in-out' style='width: 0%'></div>
                                     </div>
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between small mb-1">
-                                            <span>Episodic</span>
-                                            <span id="dist-ep-text">0%</span>
-                                        </div>
-                                        <div class="progress" style="height: 10px;">
-                                            <div id="dist-ep-bar" class="progress-bar bg-warning" role="progressbar" style="width: 0%"></div>
-                                        </div>
+                                </div>
+                                <div class='space-y-2'>
+                                    <div class='flex justify-between text-[11px] font-bold uppercase tracking-wider'>
+                                        <span class='text-zinc-400'>Episodic</span>
+                                        <span id='dist-ep-text' class='text-zinc-950'>0%</span>
                                     </div>
-                                    <hr>
-                                    <div class="row text-center mt-3">
-                                        <div class="col-6 border-end">
-                                            <h4 class="fw-bold mb-0" id="dist-pii-count">0</h4>
-                                            <span class="badge badge-pii">PII Items</span>
-                                        </div>
-                                        <div class="col-6">
-                                            <h4 class="fw-bold mb-0" id="dist-nonpii-count">0</h4>
-                                            <span class="badge badge-non_pii">Non-PII</span>
-                                        </div>
+                                    <div class='h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden'>
+                                        <div id='dist-ep-bar' class='h-full bg-zinc-200 transition-all duration-700 ease-in-out' style='width: 0%'></div>
+                                    </div>
+                                </div>
+                                <div class='grid grid-cols-2 pt-6 border-t border-zinc-100 divide-x divide-zinc-100'>
+                                    <div class='text-center pr-3'>
+                                        <div class='text-lg font-black tracking-tight' id='dist-pii-count'>0</div>
+                                        <div class='text-[9px] font-bold text-red-500 uppercase mt-1 tracking-widest'>PII Assets</div>
+                                    </div>
+                                    <div class='text-center pl-3'>
+                                        <div class='text-lg font-black tracking-tight' id='dist-nonpii-count'>0</div>
+                                        <div class='text-[9px] font-bold text-emerald-600 uppercase mt-1 tracking-widest'>Compliant</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Top Agents -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span>Recent Activity</span>
-                                    <i class="bi bi-activity text-muted"></i>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="list-group list-group-flush" id="recent-activity-list">
-                                        <li class="list-group-item text-center text-muted py-5">Loading activity...</li>
-                                    </ul>
+                        <div class='lg:col-span-2 border border-zinc-200 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col'>
+                            <div class='p-6 border-b border-zinc-100 flex items-center justify-between'>
+                                <h3 class='font-bold text-[10px] uppercase tracking-widest text-zinc-400'>Network Throughput</h3>
+                                <i data-lucide='zap' class='w-4 h-4 text-zinc-400'></i>
+                            </div>
+                            <div class='p-0 flex-1'>
+                                <div id='recent-activity-list' class='divide-y divide-zinc-50'>
+                                    <div class='p-12 text-center text-zinc-400 text-xs lowercase italic'>Establishing baseline...</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Recent Audit Table -->
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span>Recent Audit Events</span>
-                            <a href="#" onclick="showTab('audit')" class="text-primary small">View all</a>
+                    <!-- Audit Strip -->
+                    <div class='border border-zinc-200 bg-white rounded-xl shadow-sm overflow-hidden'>
+                        <div class='p-6 border-b border-zinc-100 flex items-center justify-between'>
+                            <h3 class='font-bold text-[10px] uppercase tracking-widest text-zinc-400'>Operational Trace</h3>
+                            <button onclick="showTab('audit')" class='text-[10px] font-black text-zinc-400 hover:text-zinc-950 uppercase tracking-widest transition-colors flex items-center gap-1 group'>Full Trace <i data-lucide='arrow-right' class='w-3 h-3 group-hover:translate-x-1 transition-transform'></i></button>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>Agent</th>
-                                            <th>Action</th>
-                                            <th>Decision</th>
-                                            <th>Reason</th>
-                                            <th>ID</th>
-
-                                        </tr>
-                                    </thead>
-                                    <tbody id="home-audit-tbody">
-                                        <tr><td colspan="5" class="text-center py-4">Loading audit logs...</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class='overflow-x-auto'>
+                            <table class='w-full text-left'>
+                                <thead class='text-[10px] text-zinc-400 uppercase bg-zinc-50/50 border-b border-zinc-100'>
+                                    <tr>
+                                        <th class='px-6 py-4 font-bold'>Time</th>
+                                        <th class='px-6 py-4 font-bold'>Agent</th>
+                                        <th class='px-6 py-4 font-bold text-center'>Op</th>
+                                        <th class='px-6 py-4 font-bold text-center'>State</th>
+                                        <th class='px-6 py-4 font-bold'>Reason</th>
+                                        <th class='px-6 py-4 font-bold text-right'>Reference</th>
+                                    </tr>
+                                </thead>
+                                <tbody id='home-audit-tbody' class='divide-y divide-zinc-50 text-xs text-zinc-600 font-medium'>
+                                    <tr><td colspan='6' class='px-6 py-12 text-center text-zinc-400 italic'>Syncing...</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
                 <!-- Agents Tab -->
-                <div id="content-agents" class="p-4 tab-content d-none">
-                    <div class="row align-items-center mb-4">
-                        <div class="col-6">
-                            <h3 class="fw-bold m-0">Agent Governance</h3>
-                        </div>
-                        <div class="col-6 text-end">
-                            <button class="btn btn-outline-primary btn-sm" onclick="fetchAgents()">Refresh Agents</button>
-                        </div>
-                    </div>
-                    
-                    <div id="agents-progress" class="progress d-none mb-3" style="height: 4px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                <div id='content-agents' class='tab-content hidden space-y-8'>
+                    <div class='flex items-center justify-between'>
+                        <h2 class='text-3xl font-bold tracking-tight'>Active Nodes</h2>
+                        <button onclick='fetchAgents()' class='h-9 px-4 border border-zinc-200 bg-white rounded-md text-sm font-medium hover:bg-zinc-50 flex items-center gap-2 transition-colors'>
+                            <i data-lucide='refresh-ccw' class='w-4 h-4 text-zinc-500'></i>
+                            Reload
+                        </button>
                     </div>
 
-                    <div class="row g-3" id="agents-grid">
-                        <!-- Agent Card Placeholder -->
-                        <div class="col-12 text-center py-5 text-muted">Loading agent list...</div>
+                    <div id='agents-progress' class='hidden h-1 w-full bg-zinc-100 overflow-hidden rounded-full mb-8'>
+                        <div class='h-full bg-zinc-900 animate-[loading_1s_infinite] origin-left'></div>
+                    </div>
+
+                    <div id='agents-grid' class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+                        <div class='col-span-full py-20 text-center text-zinc-400 italic text-sm'>Identifying active instances...</div>
                     </div>
                 </div>
 
-                <!-- Audit Logs Tab -->
-                <div id="content-audit" class="p-4 tab-content d-none">
-                    <h3 class="fw-bold mb-4">Security Audit Explorer</h3>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold">Agent ID</label>
-                                    <input type="text" id="filter-agent" class="form-control" placeholder="Filter by agent...">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold">Operation</label>
-                                    <select id="filter-op" class="form-control">
-                                        <option value="">All Operations</option>
-                                        <option value="write">Write</option>
-                                        <option value="read">Read</option>
-                                        <option value="query">Query</option>
-                                        <option value="disable">Disable</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold">Limit</label>
-                                    <select id="filter-limit" class="form-control">
-                                        <option value="50">50 records</option>
-                                        <option value="200">200 records</option>
-                                        <option value="1000">1000 records</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button class="btn btn-primary w-100" onclick="auditOffset=0; fetchAuditLogs()">Search</button>
-                                </div>
+                <!-- Audit Explorer Tab -->
+                <div id='content-audit' class='tab-content hidden space-y-8'>
+                    <h2 class='text-3xl font-bold tracking-tight'>Forensic Log</h2>
+
+                    <div class='bg-white border border-zinc-200 rounded-xl p-6 shadow-sm'>
+                        <div class='grid grid-cols-1 md:grid-cols-12 gap-6'>
+                            <div class='md:col-span-4 space-y-2'>
+                                <label class='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>Identity</label>
+                                <input type='text' id='filter-agent' class='w-full h-10 px-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm focus:ring-1 focus:ring-zinc-400 outline-none transition-all font-mono' placeholder='agent-*'>
                             </div>
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold">Start Time</label>
-                                    <input type="datetime-local" id="filter-start" class="form-control">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold">End Time</label>
-                                    <input type="datetime-local" id="filter-end" class="form-control">
-                                </div>
-                                <div class="col-md-4 d-flex align-items-end">
-                                    <button class="btn btn-outline-secondary w-100" onclick="document.getElementById('filter-start').value=''; document.getElementById('filter-end').value=''; auditOffset=0; fetchAuditLogs()">Clear Dates</button>
-                                </div>
+                            <div class='md:col-span-4 space-y-2'>
+                                <label class='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>Operation</label>
+                                <select id='filter-op' class='w-full h-10 px-3 bg-white border border-zinc-200 rounded-md text-sm focus:ring-1 focus:ring-zinc-400 outline-none transition-all cursor-pointer'>
+                                    <option value=''>Universal</option>
+                                    <option value='write'>Write Operations</option>
+                                    <option value='read'>Read Operations</option>
+                                    <option value='query'>Governance Query</option>
+                                    <option value='disable'>Management Activity</option>
+                                </select>
+                            </div>
+                            <div class='md:col-span-4 space-y-2'>
+                                <label class='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>Page Size</label>
+                                <select id='filter-limit' class='w-full h-10 px-3 bg-white border border-zinc-200 rounded-md text-sm focus:ring-1 focus:ring-zinc-400 outline-none transition-all cursor-pointer'>
+                                    <option value='50'>50 Rows</option>
+                                    <option value='200'>200 Rows</option>
+                                    <option value='1000'>1000 Rows</option>
+                                </select>
+                            </div>
+
+                            <div class='md:col-span-4 space-y-2'>
+                                <label class='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>From</label>
+                                <input type='datetime-local' id='filter-start' class='w-full h-10 px-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-mono focus:ring-1 focus:ring-zinc-400 outline-none transition-all'>
+                            </div>
+                            <div class='md:col-span-4 space-y-2'>
+                                <label class='text-[10px] font-bold text-zinc-400 uppercase tracking-widest'>To</label>
+                                <input type='datetime-local' id='filter-end' class='w-full h-10 px-3 bg-zinc-50 border border-zinc-200 rounded-md text-sm font-mono focus:ring-1 focus:ring-zinc-400 outline-none transition-all'>
+                            </div>
+                            <div class='md:col-span-4 flex items-end gap-2'>
+                                <button onclick='auditOffset=0; fetchAuditLogs()' class='flex-1 bg-zinc-950 text-white h-10 rounded-md text-xs font-bold uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-sm'>Execute Search</button>
+                                <button onclick="document.getElementById('filter-start').value=''; document.getElementById('filter-end').value=''; auditOffset=0; fetchAuditLogs()" class='px-4 border border-zinc-200 h-10 rounded-md text-zinc-500 hover:bg-zinc-50 transition-all' title='Clear Filters'><i data-lucide='x' class='w-4 h-4'></i></button>
                             </div>
                         </div>
                     </div>
-                    <div class="card mb-4">
-                        <div id="audit-progress" class="progress d-none" style="height: 4px; border-radius: 0;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+
+                    <div id='audit-progress' class='hidden h-1 w-full bg-zinc-100 overflow-hidden rounded-full font-mono italic'>Scanning logs...</div>
+
+                    <div class='border border-zinc-200 bg-white rounded-xl shadow-sm overflow-hidden flex flex-col'>
+                        <div class='overflow-x-auto max-h-[600px] overflow-y-auto'>
+                            <table class='w-full text-xs text-left'>
+                                <thead class='text-[10px] text-zinc-400 uppercase bg-zinc-50/90 backdrop-blur-md sticky top-0 font-bold border-b border-zinc-100 z-10'>
+                                    <tr>
+                                        <th class='px-6 py-4'>Time (UTC)</th>
+                                        <th class='px-6 py-4'>Identity</th>
+                                        <th class='px-6 py-4 text-center'>Type</th>
+                                        <th class='px-6 py-4 text-center'>Decision</th>
+                                        <th class='px-6 py-4'>Logic</th>
+                                        <th class='px-6 py-4 text-right'>Trace</th>
+                                    </tr>
+                                </thead>
+                                <tbody id='audit-logs-tbody' class='divide-y divide-zinc-50 font-medium text-zinc-600'>
+                                    <tr><td colspan='6' class='px-6 py-20 text-center text-zinc-400 italic font-mono lowercase tracking-tighter'>Forensic data stream idle.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive audit-table-container">
-                                <table class="table table-hover table-sm mb-0">
-                                    <thead class="table-light sticky-top">
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>Agent</th>
-                                            <th>Op</th>
-                                            <th>Decision</th>
-                                            <th>Reason</th>
-                                            <th>ID</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="audit-logs-tbody">
-                                        <tr><td colspan="6" class="text-center py-5">Enter filters to search audit trails</td></tr>
-                                    </tbody>
-                                </table>
+                        <div class='px-6 py-4 bg-zinc-50/50 border-t border-zinc-100 flex items-center justify-between'>
+                            <div class='text-[10px] font-black text-zinc-300 uppercase tracking-widest' id='audit-pagination-info'>Offset: 0 - Rows: 0</div>
+                            <div class='flex items-center gap-1'>
+                                <button onclick='changeAuditPage(-1)' id='audit-btn-prev' disabled class='h-8 px-4 border border-zinc-200 bg-white rounded text-[10px] font-black uppercase tracking-tighter hover:bg-zinc-50 disabled:opacity-30 transition-all'>Prev</button>
+                                <button onclick='changeAuditPage(1)' id='audit-btn-next' disabled class='h-8 px-4 border border-zinc-200 bg-white rounded text-[10px] font-black uppercase tracking-tighter hover:bg-zinc-50 disabled:opacity-30 transition-all'>Next</button>
                             </div>
-                        </div>
-                        <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-3">
-                            <span class="text-muted small" id="audit-pagination-info">Showing 0-0 records</span>
-                            <nav>
-                                <ul class="pagination pagination-sm mb-0">
-                                    <li class="page-item"><button class="page-link" onclick="changeAuditPage(-1)" id="audit-btn-prev" disabled>Previous</button></li>
-                                    <li class="page-item"><button class="page-link" onclick="changeAuditPage(1)" id="audit-btn-next" disabled>Next</button></li>
-                                </ul>
-                            </nav>
                         </div>
                     </div>
                 </div>
 
                 <!-- Policies Tab -->
-                <div id="content-policies" class="p-4 tab-content d-none">
-                    <h3 class="fw-bold mb-4">Governance Policies</h3>
-                    <div id="policies-progress" class="progress d-none mb-3" style="height: 4px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                <div id='content-policies' class='tab-content hidden space-y-8'>
+                    <div class='flex items-center justify-between'>
+                        <h2 class='text-3xl font-bold tracking-tight'>Contract Logic</h2>
+                        <div class='flex items-center gap-2 bg-emerald-950 text-white px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest italic'>
+                            <i data-lucide='verified' class='w-3 h-3'></i>
+                            Hardened
+                        </div>
                     </div>
-                    <div id="policies-content">
-                        <!-- Polices will be loaded here -->
-                        <div class="text-center py-5 text-muted">Loading active policies...</div>
+
+                    <div id='policies-content' class='grid grid-cols-1 md:grid-cols-2 gap-8'>
+                        <!-- Loaded via JS -->
+                    </div>
+
+                    <div class='p-6 border border-zinc-200 bg-zinc-100/30 rounded-xl text-xs text-zinc-400 font-medium italic text-center'>
+                        <i data-lucide='info' class='inline-block w-3 h-3 mr-1 align-text-bottom'></i>
+                        Goverance contracts are read-only. Policy-as-Code requires source control integration for all state modifications.
                     </div>
                 </div>
-
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- Bootstrap Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Animation Utilities -->
+    <style>
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        select { appearance: none; -webkit-appearance: none; }
+    </style>
 
     <script>
+        // Lucide Initializer
+        window.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+
         let currentUserApiKey = '';
         let refreshIntervalId = null;
 
-        // Cookie helpers
+        // Configuration Persistent Helpers
         function setCookie(name, value, days) {
             let expires = "";
             if (days) {
@@ -462,41 +408,25 @@
         function updateRefreshInterval() {
             const val = document.getElementById('auto-refresh-select').value;
             setCookie('amg_refresh_interval', val, 30);
-            
-            if (refreshIntervalId) {
-                clearInterval(refreshIntervalId);
-                refreshIntervalId = null;
-            }
-            
-            if (val > 0) {
-                refreshIntervalId = setInterval(refreshCurrentTab, parseInt(val));
-            }
+            if (refreshIntervalId) clearInterval(refreshIntervalId);
+            if (val > 0) refreshIntervalId = setInterval(refreshCurrentTab, parseInt(val));
         }
 
         function refreshCurrentTab() {
-            const activeTab = document.querySelector('.nav-link.active');
-            if (activeTab) {
-                const onclick = activeTab.getAttribute('onclick') || '';
-                if (onclick.includes('dashboard')) {
-                    fetchSummary();
-                    fetchAuditLogs(5, true);
-                } else if (onclick.includes('agents')) {
-                    fetchAgents(true);
-                } else if (onclick.includes('audit')) {
-                    fetchAuditLogs(null, true);
-                }
-            } else {
-                fetchSummary();
-                fetchAuditLogs(5, true);
+            const activeLink = document.querySelector('.nav-link.bg-zinc-100');
+            if (activeLink) {
+                const id = activeLink.id.replace('nav-', '');
+                if (id === 'dashboard') { fetchSummary(); fetchAuditLogs(5, true); }
+                else if (id === 'agents') { fetchAgents(true); }
+                else if (id === 'audit') { fetchAuditLogs(null, true); }
             }
         }
 
-        // Authentication logic
         function checkAuth() {
             const savedKey = localStorage.getItem('amg_api_key');
             if (savedKey) {
                 currentUserApiKey = savedKey;
-                document.getElementById('api-key-overlay').style.display = 'none';
+                document.getElementById('api-key-overlay').classList.add('hidden', 'pointer-events-none');
                 refreshAllData();
             }
         }
@@ -506,7 +436,7 @@
             if (key) {
                 localStorage.setItem('amg_api_key', key);
                 currentUserApiKey = key;
-                document.getElementById('api-key-overlay').style.display = 'none';
+                document.getElementById('api-key-overlay').classList.add('hidden', 'pointer-events-none');
                 refreshAllData();
             }
         }
@@ -516,344 +446,265 @@
             location.reload();
         }
 
-        // Navigation
         function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('d-none'));
-            document.getElementById('content-' + tabName).classList.remove('d-none');
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('content-' + tabName).classList.remove('hidden');
             
-            document.querySelectorAll('.sidebar .nav-link').forEach(el => el.classList.remove('active'));
-            document.querySelector(`.sidebar .nav-link[onclick*="${tabName}"]`).classList.add('active');
+            // Header Logic
+            const labels = { dashboard: 'System Metrics', agents: 'Governance Units', audit: 'Forensic Explorer', policies: 'Hardened Contracts' };
+            document.getElementById('tab-title').textContent = labels[tabName] || 'Overview';
 
-            if (tabName === 'dashboard') {
-                fetchSummary();
-                fetchAuditLogs(5);
-                fetchCertStatus();
-            }
+            // Nav Highlighting
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('bg-zinc-100', 'text-zinc-950'));
+            document.getElementById('nav-' + tabName).classList.add('bg-zinc-100', 'text-zinc-950');
+
+            if (tabName === 'dashboard') { fetchSummary(); fetchAuditLogs(5); fetchCertStatus(); }
             if (tabName === 'agents') fetchAgents();
             if (tabName === 'audit') fetchAuditLogs();
             if (tabName === 'policies') fetchPolicies();
         }
 
-        // Data fetching
         async function apiFetch(endpoint, method = 'GET', body = null) {
-            const options = {
-                method: method,
-                headers: {
-                    'X-API-Key': currentUserApiKey,
-                    'Content-Type': 'application/json'
-                }
-            };
+            const headers = { 'X-API-Key': currentUserApiKey, 'Content-Type': 'application/json' };
+            const options = { method, headers };
             if (body) options.body = JSON.stringify(body);
-
             try {
-                const response = await fetch(endpoint, options);
-                if (response.status === 401 || response.status === 403) {
-                    alert('Authentication failed. Please re-enter API key.');
-                    logout();
-                    return null;
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('API Error:', error);
-                return null;
-            }
+                const res = await fetch(endpoint, options);
+                if (res.status === 401 || res.status === 403) { logout(); return null; }
+                return await res.json();
+            } catch (e) { console.error('API Error:', e); return null; }
         }
 
         async function refreshAllData() {
-            await fetchSummary();
-            await fetchAuditLogs(5);
-            await fetchCertStatus();
-
-            // Handle auto-refresh initialization
+            await Promise.all([fetchSummary(), fetchAuditLogs(5), fetchCertStatus()]);
             const savedInterval = getCookie('amg_refresh_interval');
             const select = document.getElementById('auto-refresh-select');
-            if (savedInterval !== null) {
-                select.value = savedInterval;
-            } else {
-                select.value = "5000"; // Default 5s
-            }
+            if (savedInterval !== null) select.value = savedInterval;
             updateRefreshInterval();
         }
 
         async function fetchSummary() {
             const stats = await apiFetch('/stats/memory-summary');
             if (!stats) return;
-
-            document.getElementById('stat-total-memories').innerText = stats.total_memories || 0;
+            document.getElementById('stat-total-memories').innerText = (stats.total_memories || 0).toLocaleString();
             
-            // Distributions
             const total = stats.total_memories || 1;
-            const ltCount = stats.by_type.long_term || 0;
-            const stCount = stats.by_type.short_term || 0;
-            const epCount = stats.by_type.episodic || 0;
-
-            document.getElementById('dist-lt-bar').style.width = (ltCount/total*100) + '%';
-            document.getElementById('dist-lt-text').innerText = Math.round(ltCount/total*100) + '%';
-            
-            document.getElementById('dist-st-bar').style.width = (stCount/total*100) + '%';
-            document.getElementById('dist-st-text').innerText = Math.round(stCount/total*100) + '%';
-
-            document.getElementById('dist-ep-bar').style.width = (epCount/total*100) + '%';
-            document.getElementById('dist-ep-text').innerText = Math.round(epCount/total*100) + '%';
-
+            document.getElementById('dist-lt-bar').style.width = (stats.by_type.long_term/total*100) + '%';
+            document.getElementById('dist-lt-text').innerText = Math.round(stats.by_type.long_term/total*100) + '%';
+            document.getElementById('dist-st-bar').style.width = (stats.by_type.short_term/total*100) + '%';
+            document.getElementById('dist-st-text').innerText = Math.round(stats.by_type.short_term/total*100) + '%';
+            document.getElementById('dist-ep-bar').style.width = (stats.by_type.episodic/total*100) + '%';
+            document.getElementById('dist-ep-text').innerText = Math.round(stats.by_type.episodic/total*100) + '%';
             document.getElementById('dist-pii-count').innerText = stats.by_sensitivity.pii || 0;
             document.getElementById('dist-nonpii-count').innerText = stats.by_sensitivity.non_pii || 0;
 
-            // Activity
             const activity = await apiFetch('/stats/agent-activity');
             if (activity) {
                 document.getElementById('stat-active-agents').innerText = activity.summary.unique_agents || 0;
                 document.getElementById('stat-audit-events').innerText = activity.summary.ops_last_24h || 0;
-                
-                let deniedCount = 0;
-                if (activity.operation_distribution) {
-                    const denied = activity.operation_distribution.find(d => d.name === 'denied');
-                    deniedCount = denied ? denied.value : 0;
-                }
-                document.getElementById('stat-denied-ops').innerText = deniedCount;
+                const denied = (activity.operation_distribution || []).find(d => d.name === 'denied');
+                document.getElementById('stat-denied-ops').innerText = denied ? denied.value : 0;
 
-                // Recent activity list
                 const list = document.getElementById('recent-activity-list');
-                let listHtml = '';
-                activity.top_agents.forEach(agent => {
-                    listHtml += `
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <div>
-                                <div class="fw-bold">${agent.agent_id}</div>
-                                <div class="small text-muted">Last: ${new Date(agent.last_activity).toLocaleString()}</div>
+                if (!activity.top_agents || activity.top_agents.length === 0) {
+                    list.innerHTML = `<div class='p-12 text-center text-zinc-400 text-xs lowercase italic font-mono'>Quiescent state.</div>`;
+                } else {
+                    list.innerHTML = activity.top_agents.map(a => `
+                        <div class='px-6 py-4 flex items-center justify-between hover:bg-zinc-50 transition-colors'>
+                            <div class='flex items-center gap-4'>
+                                <div class='h-9 w-9 bg-zinc-50 border border-zinc-200 rounded-lg flex items-center justify-center text-zinc-400'>
+                                    <i data-lucide='shield-check' class='w-4 h-4 text-zinc-900 opacity-20'></i>
+                                </div>
+                                <div class='flex flex-col min-w-0'>
+                                    <span class='text-xs font-black text-zinc-950 truncate max-w-[120px] lg:max-w-none font-mono uppercase tracking-tighter'>${a.agent_id}</span>
+                                    <span class='text-[9px] font-bold text-zinc-400 uppercase tabular-nums tracking-widest'>${new Date(a.last_activity).toLocaleTimeString()} UTC</span>
+                                </div>
                             </div>
-                            <span class="badge bg-light text-dark rounded-pill">${agent.operations_count} ops</span>
-                        </li>
-                    `;
-                });
-                list.innerHTML = listHtml;
+                            <div class='text-right'>
+                                <span class='text-sm font-black text-zinc-900 tabular-nums'>${a.operations_count.toLocaleString()}</span>
+                                <span class='text-[9px] font-bold text-zinc-300 uppercase block tracking-tighter'>SIGNS</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                lucide.createIcons();
             }
         }
 
         let auditOffset = 0;
-
         async function fetchAuditLogs(limitOverride = null, quiet = false) {
             const limit = limitOverride || document.getElementById('filter-limit').value;
-            const agentId = document.getElementById('filter-agent') ? document.getElementById('filter-agent').value : '';
-            const operation = document.getElementById('filter-op') ? document.getElementById('filter-op').value : '';
-            const startTime = document.getElementById('filter-start') ? document.getElementById('filter-start').value : '';
-            const endTime = document.getElementById('filter-end') ? document.getElementById('filter-end').value : '';
-            const offset = limitOverride ? 0 : auditOffset;
+            const agentId = document.getElementById('filter-agent')?.value || '';
+            const op = document.getElementById('filter-op')?.value || '';
+            const start = document.getElementById('filter-start')?.value || '';
+            const end = document.getElementById('filter-end')?.value || '';
             
-            // Show progress bar
-            if (!limitOverride && !quiet) {
-                document.getElementById('audit-progress').classList.remove('d-none');
-            }
+            if (!limitOverride && !quiet) document.getElementById('audit-progress').classList.remove('hidden');
 
-            let url = `/stats/audit-logs?limit=${limit}&offset=${offset}`;
-            if (!limitOverride && agentId) url += `&agent_id=${agentId}`;
-            if (!limitOverride && operation) url += `&operation=${operation}`;
-            if (!limitOverride && startTime) url += `&start_time=${new Date(startTime).toISOString()}`;
-            if (!limitOverride && endTime) url += `&end_time=${new Date(endTime).toISOString()}`;
+            let url = `/stats/audit-logs?limit=${limit}&offset=${limitOverride ? 0 : auditOffset}`;
+            if (!limitOverride) {
+                if (agentId) url += `&agent_id=${agentId}`;
+                if (op) url += `&operation=${op}`;
+                if (start) url += `&start_time=${new Date(start).toISOString()}`;
+                if (end) url += `&end_time=${new Date(end).toISOString()}`;
+            }
 
             const data = await apiFetch(url);
-            
-            // Hide progress bar
-            if (!limitOverride && !quiet) {
-                document.getElementById('audit-progress').classList.add('d-none');
-            }
-
+            if (!limitOverride && !quiet) document.getElementById('audit-progress').classList.add('hidden');
             if (!data) return;
 
-            const target = limitOverride ? 'home-audit-tbody' : 'audit-logs-tbody';
-            const tbody = document.getElementById(target);
-            if (!tbody) return;
-
+            const tbody = document.getElementById(limitOverride ? 'home-audit-tbody' : 'audit-logs-tbody');
             if (data.logs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No records found</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan='6' class='px-6 py-12 text-center text-zinc-300 italic font-mono lowercase tracking-tighter'>End of stream.</td></tr>`;
             } else {
-                let html = '';
-                data.logs.forEach(log => {
-                    const decisionClass = log.decision === 'allowed' ? 'text-success' : 'text-danger fw-bold';
-                    html += `
-                        <tr>
-                            <td class="small text-muted">${new Date(log.timestamp).toLocaleTimeString()}</td>
-                            <td class="small fw-bold">${log.agent_id}</td>
-                            <td><span class="badge bg-light text-dark border">${log.operation}</span></td>
-                            <td class="${decisionClass}">${log.decision}</td>
-                            <td class="small text-muted">${log.reason}</td>
-                            <td class="small text-muted font-monospace">${log.request_id ? log.request_id.substring(0,8) : '...'}</td>
-                        </tr>
-                    `;
-                });
-                tbody.innerHTML = html;
+                tbody.innerHTML = data.logs.map(log => `
+                    <tr class='hover:bg-zinc-50/70 transition-colors'>
+                        <td class='px-6 py-4 font-mono text-[10px] text-zinc-400 tabular-nums'>${new Date(log.timestamp).toLocaleTimeString()}</td>
+                        <td class='px-6 py-4 font-black text-zinc-950 uppercase tracking-tighter'>${log.agent_id}</td>
+                        <td class='px-6 py-4 text-center'>
+                            <span class='px-1.5 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-widest ${log.operation === 'write' ? 'bg-zinc-950 text-white' : 'bg-zinc-100 text-zinc-500'}'>
+                                ${log.operation}
+                            </span>
+                        </td>
+                        <td class='px-6 py-4 text-center font-black uppercase text-[9px] italic tracking-widest ${log.decision === 'allowed' ? 'text-emerald-700' : 'text-red-500'}'>
+                            ${log.decision}
+                        </td>
+                        <td class='px-6 py-4 text-[10px] leading-tight max-w-[200px] truncate opacity-80' title='${log.reason}'>${log.reason}</td>
+                        <td class='px-6 py-4 text-right font-mono text-[9px] text-zinc-300 font-bold tabular-nums'>#${(log.request_id || '000').substring(0,8)}</td>
+                    </tr>
+                `).join('');
             }
 
-            // Update pagination UI if it's the explorer
             if (!limitOverride) {
-                const count = data.logs.length;
-                document.getElementById('audit-pagination-info').innerText = count > 0 
-                    ? `Showing ${offset + 1}-${offset + count} records`
-                    : 'No records found';
-                document.getElementById('audit-btn-prev').disabled = (offset === 0);
-                document.getElementById('audit-btn-next').disabled = (count < limit);
+                document.getElementById('audit-pagination-info').innerText = `OFFSET: ${auditOffset.toLocaleString()} | SCANNING: ${limit}`;
+                document.getElementById('audit-btn-prev').disabled = (auditOffset === 0);
+                document.getElementById('audit-btn-next').disabled = (data.logs.length < limit);
             }
         }
 
-        function changeAuditPage(direction) {
+        function changeAuditPage(dir) {
             const limit = parseInt(document.getElementById('filter-limit').value);
-            if (direction > 0) {
-                auditOffset += limit;
-            } else {
-                auditOffset = Math.max(0, auditOffset - limit);
-            }
+            auditOffset = Math.max(0, auditOffset + (dir * limit));
             fetchAuditLogs();
         }
 
         async function fetchAgents(quiet = false) {
-            const progress = document.getElementById('agents-progress');
-            if (progress && !quiet) progress.classList.remove('d-none');
-            
-            const config = await apiFetch('/config/agents');
-            
-            if (progress && !quiet) progress.classList.add('d-none');
+            if (!quiet) document.getElementById('agents-progress').classList.remove('hidden');
+            const data = await apiFetch('/config/agents');
+            if (!quiet) document.getElementById('agents-progress').classList.add('hidden');
             const grid = document.getElementById('agents-grid');
-            if (!config) return;
+            if (!data || !grid) return;
 
-            let html = '';
-            config.agents.forEach(agent => {
-                let statusColor = 'success';
-                if (agent.state === 'disabled') statusColor = 'danger';
-                if (agent.state === 'frozen') statusColor = 'warning';
-                
-                html += `
-                    <div class="col-md-4">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between mb-3">
-                                    <h5 class="fw-bold m-0">${agent.agent_id}</h5>
-                                    <span class="badge bg-${statusColor}">${agent.state}</span>
+            grid.innerHTML = data.agents.length === 0 
+                ? `<div class='col-span-full py-20 text-center text-zinc-300 italic font-mono lowercase'>Identifier stack empty.</div>`
+                : data.agents.map(a => `
+                    <div class='bg-white border border-zinc-200 rounded-xl p-6 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-zinc-300 transition-all group'>
+                        <div class='space-y-4'>
+                            <div class='flex items-center justify-between'>
+                                <div class='flex items-center gap-3 min-w-0'>
+                                    <div class='w-9 h-9 border border-zinc-100 bg-zinc-50 rounded-lg flex items-center justify-center text-zinc-400 group-hover:bg-zinc-950 group-hover:text-white transition-colors duration-300'>
+                                        <i data-lucide='${a.state === 'disabled' ? 'shield-off' : 'user-check'}' class='w-4 h-4'></i>
+                                    </div>
+                                    <span class='text-xs font-black text-zinc-950 font-mono uppercase tracking-tighter truncate'>${a.agent_id}</span>
                                 </div>
-                                <div class="d-grid gap-2">
-                                    <button class="btn btn-outline-danger btn-sm" onclick="agentAction('${agent.agent_id}', 'disable')">Disable Agent</button>
-                                    <button class="btn btn-outline-warning btn-sm" onclick="agentAction('${agent.agent_id}', 'freeze')">Freeze Writes</button>
-                                    <button class="btn btn-outline-success btn-sm" onclick="agentAction('${agent.agent_id}', 'enable')">Enable/Reset</button>
-                                </div>
+                            </div>
+                            <div class='flex items-center justify-between'>
+                                <span class='text-[9px] font-black uppercase px-2 py-0.5 rounded-sm border ${a.state === 'disabled' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'}' >${a.state}</span>
+                                <span class='text-[9px] font-bold text-zinc-300 tracking-widest italic'>V.1.0</span>
+                            </div>
+                        </div>
+                        <div class='grid grid-cols-1 gap-1.5 pt-6 mt-4 border-t border-zinc-50'>
+                            <button onclick="agentAction('${a.agent_id}', 'enable')" class='h-9 text-[10px] font-black uppercase bg-zinc-950 text-white rounded hover:bg-zinc-800 transition-colors'>Re-Enable</button>
+                            <div class='grid grid-cols-2 gap-1.5'>
+                                <button onclick="agentAction('${a.agent_id}', 'freeze')" class='h-9 text-[10px] font-black uppercase bg-white border border-zinc-200 text-zinc-600 rounded hover:bg-zinc-50 transition-colors'>Freeze</button>
+                                <button onclick="agentAction('${a.agent_id}', 'disable')" class='h-9 text-[10px] font-black uppercase bg-white border border-red-100 text-red-600 rounded hover:bg-red-50 transition-colors'>Revoke</button>
                             </div>
                         </div>
                     </div>
-                `;
-            });
-            grid.innerHTML = html;
+                `).join('');
+            lucide.createIcons();
         }
 
-        async function fetchPolicies(quiet = false) {
-            const progress = document.getElementById('policies-progress');
-            if (progress && !quiet) progress.classList.remove('d-none');
-            
-            const policies = await apiFetch('/config/policies');
-            
-            if (progress && !quiet) progress.classList.add('d-none');
-            const target = document.getElementById('policies-content');
-            if (!policies) return;
-
-            target.innerHTML = `
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header bg-light fw-bold">TTL Enforcement Rules</div>
-                            <div class="card-body">
-                                <table class="table table-sm">
-                                    <thead><tr><th>Condition</th><th>Seconds</th></tr></thead>
-                                    <tbody>
-                                        ${Object.entries(policies.ttl_rules).map(([k, v]) => `<tr><td class="small text-muted">${k.replace(/_/g, ' ')}</td><td>${v.toLocaleString()}</td></tr>`).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+        async function fetchPolicies() {
+            const data = await apiFetch('/config/policies');
+            if (!data) return;
+            document.getElementById('policies-content').innerHTML = `
+                <div class='border border-zinc-200 bg-white rounded-xl overflow-hidden shadow-sm flex flex-col'>
+                    <div class='px-5 py-4 bg-zinc-50/50 border-b border-zinc-100 flex items-center justify-between'>
+                        <span class='text-[10px] font-black uppercase tracking-widest text-zinc-400'>Retention Logic (TTL)</span>
+                        <i data-lucide='clock' class='w-4 h-4 text-zinc-300'></i>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header bg-light fw-bold">Sensitivity Tagging (PII Patterns)</div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="small fw-bold text-danger d-block mb-1">PII Keywords:</label>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        ${policies.sensitivity_tags.pii_patterns.map(p => `<span class="badge bg-danger-subtle text-danger border border-danger-subtle">${p}</span>`).join('')}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="small fw-bold text-success d-block mb-1">Non-PII Keywords:</label>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        ${policies.sensitivity_tags.non_pii_patterns.map(p => `<span class="badge bg-success-subtle text-success border border-success-subtle">${p}</span>`).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class='p-5 flex-1'>
+                        <table class='w-full text-xs'>
+                            <tbody class='divide-y divide-zinc-50'>
+                                ${Object.entries(data.ttl_rules).map(([k, v]) => `<tr><td class='py-3 text-zinc-400 uppercase font-black text-[9px] tracking-tight'>${k.replace(/_/g, ' ')}</td><td class='py-3 text-right font-black tabular-nums tracking-wider'>${v.toLocaleString()} <span class='text-zinc-300 italic'>SEC</span></td></tr>`).join('')}
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header bg-light fw-bold">Context Budgeting</div>
-                            <div class="card-body">
-                                <ul class="list-group list-group-flush small">
-                                    <li class="list-group-item d-flex justify-content-between"><span>Max Tokens</span><span class="fw-bold">${policies.context_budget.max_tokens.toLocaleString()}</span></li>
-                                    <li class="list-group-item d-flex justify-content-between"><span>Max Memory Items</span><span class="fw-bold">${policies.context_budget.max_memory_items}</span></li>
-                                </ul>
-                            </div>
-                        </div>
+                </div>
+                <div class='border border-zinc-200 bg-white rounded-xl overflow-hidden shadow-sm flex flex-col'>
+                    <div class='px-5 py-4 bg-zinc-50/50 border-b border-zinc-100 flex items-center justify-between'>
+                        <span class='text-[10px] font-black uppercase tracking-widest text-zinc-400'>Traffic Tags</span>
+                        <i data-lucide='tag' class='w-4 h-4 text-zinc-300'></i>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header bg-light fw-bold">Isolation Guarantees</div>
-                            <div class="card-body">
-                                <ul class="list-group list-group-flush small">
-                                    <li class="list-group-item d-flex justify-content-between"><span>Agent Scope Isolation</span><span class="badge bg-success">Non-Bypassable</span></li>
-                                    <li class="list-group-item d-flex justify-content-between"><span>Tenant Scope Isolation</span><span class="badge bg-success">Non-Bypassable</span></li>
-                                    <li class="list-group-item d-flex justify-content-between text-muted"><span>Policy Version</span><span>${policies.policy_version}</span></li>
-                                </ul>
-                            </div>
+                    <div class='p-6 space-y-6 flex-1'>
+                        <div>
+                            <span class='text-[9px] font-bold text-red-500 uppercase block mb-3 tracking-widest font-black italic'>Restricted PII Patterns</span>
+                            <div class='flex flex-wrap gap-1.5'>${data.sensitivity_tags.pii_patterns.map(p => `<span class='px-2 py-1 bg-red-50 text-red-600 border border-red-100 rounded text-[9px] font-black font-mono lowercase'>${p}</span>`).join('')}</div>
+                        </div>
+                        <div class='pt-6 border-t border-zinc-50'>
+                            <span class='text-[9px] font-bold text-emerald-600 uppercase block mb-3 tracking-widest font-black italic'>Compliant Metadata Keys</span>
+                            <div class='flex flex-wrap gap-1.5'>${data.sensitivity_tags.non_pii_patterns.map(p => `<span class='px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[9px] font-black font-mono lowercase'>${p}</span>`).join('')}</div>
                         </div>
                     </div>
                 </div>
-                <div class="mt-4 p-3 bg-light-subtle rounded border small text-muted">
-                    <i class="bi bi-info-circle"></i> Policies are read-only in the UI to ensure <strong>Policy-as-Code</strong> integrity. All changes must be deployed via the repository and are audited as configuration changes.
+                <div class='border border-zinc-200 bg-white rounded-xl overflow-hidden shadow-sm flex flex-col'>
+                    <div class='px-5 py-4 bg-zinc-50/50 border-b border-zinc-100 flex items-center justify-between'>
+                        <span class='text-[10px] font-black uppercase tracking-widest text-zinc-400'>Context Budgeting</span>
+                        <i data-lucide='database' class='w-4 h-4 text-zinc-300'></i>
+                    </div>
+                    <div class='p-6 space-y-4 flex-1'>
+                        <div class='flex justify-between items-center'><span class='text-xs font-bold text-zinc-400 uppercase tracking-tighter'>Hard Token Cap</span><span class='text-xs font-black tabular-nums font-mono'>${data.context_budget.max_tokens.toLocaleString()}</span></div>
+                        <div class='flex justify-between items-center'><span class='text-xs font-bold text-zinc-400 uppercase tracking-tighter'>Maximum Memory Assets</span><span class='text-xs font-black tabular-nums font-mono'>${data.context_budget.max_memory_items.toLocaleString()}</span></div>
+                    </div>
+                </div>
+                <div class='border border-zinc-200 bg-white rounded-xl overflow-hidden shadow-sm flex flex-col'>
+                    <div class='px-5 py-4 bg-zinc-50/50 border-b border-zinc-100 flex items-center justify-between'>
+                        <span class='text-[10px] font-black uppercase tracking-widest text-zinc-400'>Hardened Isolation</span>
+                        <i data-lucide='shield' class='w-4 h-4 text-zinc-300'></i>
+                    </div>
+                    <div class='p-6 space-y-4 flex-1'>
+                        <div class='flex justify-between items-center'><span class='text-xs font-bold text-zinc-400 uppercase tracking-tighter italic'>State Store</span><span class='px-2 py-0.5 bg-zinc-100 text-zinc-800 text-[9px] font-black uppercase italic rounded-sm'>PG-SQL HARDENED</span></div>
+                        <div class='flex justify-between items-center'><span class='text-xs font-bold text-zinc-400 uppercase tracking-tighter italic'>Traffic Tunnel</span><span class='px-2 py-0.5 bg-zinc-950 text-white text-[9px] font-black uppercase italic rounded-sm'>TLS 1.3 / AES-256</span></div>
+                    </div>
                 </div>
             `;
+            lucide.createIcons();
         }
 
         async function fetchCertStatus() {
             const data = await apiFetch('/system/certificate-status');
-            if (!data || data.error) return;
-            
-            document.getElementById('cert-status-text').innerText = 'Cert: ' + (data.certificate_info.notAfter ? 'Valid' : 'Unknown');
-            document.getElementById('cert-expiry').innerText = 'Ends: ' + (data.certificate_info.notAfter || 'Unknown');
+            if (data?.certificate_info?.notAfter) {
+                document.getElementById('cert-status-text').innerText = 'ENCRYPTION: ACTIVE';
+                document.getElementById('cert-expiry').innerText = 'EXPIRATION: ' + data.certificate_info.notAfter;
+            }
         }
 
-        async function agentAction(agentId, action) {
-            const reason = prompt(`Reason for ${action} agent ${agentId}:`, 'Operator manual override');
+        async function agentAction(id, action) {
+            const reason = prompt(`Governance justifcation for ${action.toUpperCase()} on ${id}:`, 'Operator Override');
             if (reason === null) return;
-
-            const res = await apiFetch(`/agent/${agentId}/${action}`, 'POST', { reason: reason });
-            if (res) {
-                alert(`Agent ${agentId} ${action}d successfully.`);
-                fetchAgents();
-                fetchAuditLogs();
-            }
+            const res = await apiFetch(`/agent/${id}/${action}`, 'POST', { reason });
+            if (res) { fetchAgents(); fetchAuditLogs(); }
         }
 
         async function triggerGlobalShutdown() {
-            if (!confirm('CRITICAL: This will disable ALL memory governance operations system-wide. Proceed?')) return;
-            const reason = prompt('Reason for Global Shutdown:', 'Emergency maintenance');
+            if (!confirm('INITIATE EMERGENCY SYSTEM SHUTDOWN?')) return;
+            const reason = prompt('Shutdown Justification:');
             if (!reason) return;
-            
-            const res = await apiFetch('/system/shutdown', 'POST', { 
-                reason: reason,
-                actor_id: 'operator'
-            });
-            
-            if (res) {
-                alert('GLOBAL SHUTDOWN ACTIVATED: All agent memory operations are now disabled.');
-                fetchAgents();
-                refreshAllData();
-            }
+            await apiFetch('/system/shutdown', 'POST', { reason, actor_id: 'operator-1' });
+            refreshAllData();
         }
 
-        // Init
         window.onload = checkAuth;
     </script>
 </body>

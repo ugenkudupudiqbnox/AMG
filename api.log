@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/ugen/Documents/GitHub/AMG/src/amg/api/server.py", line 911, in <module>
+    app = create_app()
+  File "/Users/ugen/Documents/GitHub/AMG/src/amg/api/server.py", line 164, in create_app
+    templates = Jinja2Templates(directory=template_dir)
+  File "/Users/ugen/Library/Python/3.9/lib/python/site-packages/starlette/templating.py", line 97, in __init__
+    assert jinja2 is not None, "jinja2 must be installed to use Jinja2Templates"
+AssertionError: jinja2 must be installed to use Jinja2Templates

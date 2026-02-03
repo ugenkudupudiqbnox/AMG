@@ -19,12 +19,12 @@ def simple_agent_loop():
     context_builder = GovernedContextBuilder(storage, kill_switch, policy)
 
     agent_id = "agent-007"
-    print(f"🚀 Starting Basic Governed Agent: {agent_id}")
+    print(f"Starting Basic Governed Agent: {agent_id}")
 
     # 2. Record some initial memory
     # Note: Using the internal storage.write usually requires a Memory object.
     # We'll create one manually to show the governance contract.
-    print("📝 Recording initial user preference...")
+    print("Recording initial user preference...")
     
     from amg.types import Memory, MemoryPolicy, MemoryType, Sensitivity, Scope
     from datetime import datetime, timedelta
@@ -43,7 +43,7 @@ def simple_agent_loop():
     storage.write(memory, {"request_id": "initial-setup"})
 
     # 3. Simulate a response cycle
-    print("\n🧐 Cycle 1: Thinking...")
+    print("\nCycle 1: Thinking...")
     
     # Always build context through the GovernedContextBuilder
     context = context_builder.build_context(agent_id=agent_id)
@@ -53,14 +53,14 @@ def simple_agent_loop():
         print(f"   [Memory]: {mem.content}")
 
     # 4. Demonstrate Kill Switch Enforcement
-    print("\n🛑 Simulating security incident: Disabling Agent...")
+    print("\nSimulating security incident: Disabling Agent...")
     kill_switch.disable(agent_id, reason="Manual override test", actor_id="admin-1")
 
-    print("🧐 Cycle 2: Attempting to read memory after disable...")
+    print("Cycle 2: Attempting to read memory after disable...")
     try:
         context_builder.build_context(agent_id=agent_id)
     except Exception as e:
-        print(f"   ✅ Governance Blocked Access: {e}")
+        print(f"   Governance Blocked Access: {e}")
 
 if __name__ == "__main__":
     simple_agent_loop()
