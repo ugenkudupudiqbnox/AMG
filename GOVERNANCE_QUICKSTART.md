@@ -386,10 +386,15 @@ This satisfies data subject deletion expectations.
 ## What You’ve Proven in 15 Minutes
 
 ✔ Memory cannot be written without policy
+
 ✔ Retention is enforced
+
 ✔ Context is curated
+
 ✔ Behavior is auditable
+
 ✔ Agents are stoppable
+
 ✔ Deletion is provable
 
 This is **enterprise-grade governance**.
@@ -399,9 +404,13 @@ This is **enterprise-grade governance**.
 ## Common Early Mistakes
 
 ❌ Skipping TTLs “for now”
+
 ❌ Letting agents cache memory outside AMG
+
 ❌ Treating audit logs as optional
+
 ❌ Testing only happy path
+
 ❌ Confusing governance with prompt design
 
 ---
