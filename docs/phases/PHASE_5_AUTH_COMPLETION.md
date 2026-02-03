@@ -373,7 +373,7 @@ None at this time. All core features are production-ready.
 - [API Authentication & Deployment](API_AUTHENTICATION_DEPLOYMENT.md) - Deployment guide
 - [HTTP API Reference](PHASE_5_HTTP_API.md) - Endpoint documentation
 - [Architecture](ARCHITECTURE.md) - System design
-- [Governance Model](GOVERNANCE_MODEL.md) - Decision principles
+- [Governance Model](../../GOVERNANCE_MODEL.md) - Decision principles
 - [Security Policy](SECURITY.md) - Security procedures
 
 ---

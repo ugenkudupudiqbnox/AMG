@@ -17,7 +17,7 @@
 - **[Architecture Overview](./architecture/ARCHITECTURE.md)** - High-level system design
 - **[Implementation Details](./architecture/IMPLEMENTATION.md)** - Core implementation patterns
 - **[Policy Schema](./governance/POLICY_SCHEMA.md)** - Governance contract definitions
-- **[Governance Model](./governance/GOVERNANCE_MODEL.md)** - Decision principles and policies
+- **[Governance Model](../GOVERNANCE_MODEL.md)** - Decision principles and policies
 - **[Threat Model](./governance/THREAT_MODEL.md)** - Security analysis and risks
 
 ### Deployment & Infrastructure
@@ -71,7 +71,6 @@ docs/
 │   └── IMPLEMENTATION.md             - Core implementation patterns
 ├── governance/
 │   ├── POLICY_SCHEMA.md             - Governance contract definitions
-│   ├── GOVERNANCE_MODEL.md          - Decision principles
 │   └── THREAT_MODEL.md              - Security analysis
 ├── deployment/
 │   ├── DEPLOYMENT_CHECKLIST.md      - Pre-production checks
@@ -111,14 +110,14 @@ docs/
 ### For Developers
 1. Study [Architecture](./architecture/ARCHITECTURE.md)
 2. Review [Implementation](./architecture/IMPLEMENTATION.md)
-3. Understand [Governance Model](./governance/GOVERNANCE_MODEL.md)
+3. Understand [Governance Model](../GOVERNANCE_MODEL.md)
 4. Check [Threat Model](./governance/THREAT_MODEL.md)
 5. Contribute: [Contributing Guide](../CONTRIBUTING.md)
 
 ### For Security/Compliance Teams
 1. Review [Threat Model](./governance/THREAT_MODEL.md)
 2. Study [Policy Schema](./governance/POLICY_SCHEMA.md)
-3. Check [Governance Model](./governance/GOVERNANCE_MODEL.md)
+3. Check [Governance Model](../GOVERNANCE_MODEL.md)
 4. Read [Security Policy](../SECURITY.md)
 
 ### For Deployment/DevOps

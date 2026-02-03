@@ -18,7 +18,7 @@
 
 ### Architecture & Design
 1. **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and high-level architecture
-2. **[GOVERNANCE_MODEL.md](GOVERNANCE_MODEL.md)** - Governance decision principles
+2. **[GOVERNANCE_MODEL.md](../../GOVERNANCE_MODEL.md)** - Governance decision principles
 3. **[POLICY_SCHEMA.md](POLICY_SCHEMA.md)** - Memory policy schema definition
 
 ### Project Organization
@@ -166,7 +166,6 @@ AMG/
 │  ├─ ARCHITECTURE.md (system design)
 │  ├─ CONTRIBUTING.md (contribution guide)
 │  ├─ SECURITY.md (security policies)
-│  ├─ GOVERNANCE_MODEL.md (decision principles)
 │  ├─ POLICY_SCHEMA.md (memory schema)
 │  │
 │  ├─ Deployment Documentation
