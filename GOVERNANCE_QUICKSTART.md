@@ -397,7 +397,7 @@ This is **enterprise-grade governance**.
 ❌ Skipping TTLs “for now”
 ❌ Letting agents cache memory outside AMG
 ❌ Treating audit logs as optional
-❌ Testing only happy paths
+❌ Testing only happy path
 ❌ Confusing governance with prompt design
 
 ---
