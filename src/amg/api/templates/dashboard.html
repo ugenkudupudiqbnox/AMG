@@ -151,6 +151,16 @@
                     <div class="container-fluid">
                         <span class="navbar-brand mb-0 h1 fs-6 text-muted">Management Console</span>
                         <div class="d-flex align-items-center">
+                            <div class="me-3 d-flex align-items-center">
+                                <label class="small text-muted me-2">Auto-Refresh:</label>
+                                <select id="auto-refresh-select" class="form-select form-select-sm" style="width: auto;" onchange="updateRefreshInterval()">
+                                    <option value="0">Off</option>
+                                    <option value="5000">5s</option>
+                                    <option value="10000">10s</option>
+                                    <option value="30000">30s</option>
+                                    <option value="60000">60s</option>
+                                </select>
+                            </div>
                             <div class="me-3 text-end d-none d-sm-block">
                                 <div class="small fw-semibold" id="cert-status-text">Cert: Valid</div>
                                 <div class="text-muted" style="font-size: 0.7rem;" id="cert-expiry">Expires in 89 days</div>
@@ -409,6 +419,54 @@
 
     <script>
         let currentUserApiKey = '';
+        let refreshIntervalId = null;
+
+        // Cookie helpers
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                let date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            let nameEQ = name + "=";
+            let ca = document.cookie.split(';');
+            for(let i=0;i < ca.length;i++) {
+                let c = ca[i];
+                while (c.charAt(0)==' ') c = c.substring(1,c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+            }
+            return null;
+        }
+
+        function updateRefreshInterval() {
+            const val = document.getElementById('auto-refresh-select').value;
+            setCookie('amg_refresh_interval', val, 30);
+            
+            if (refreshIntervalId) {
+                clearInterval(refreshIntervalId);
+                refreshIntervalId = null;
+            }
+            
+            if (val > 0) {
+                refreshIntervalId = setInterval(refreshCurrentTab, parseInt(val));
+            }
+        }
+
+        function refreshCurrentTab() {
+            const activeTab = document.querySelector('.nav-link.active');
+            if (activeTab) {
+                activeTab.click();
+            } else {
+                // Default to first load behavior
+                fetchDashboardStats();
+                fetchAuditLogs(10);
+            }
+        }
 
         // Authentication logic
         function checkAuth() {
@@ -477,6 +535,16 @@
             await fetchSummary();
             await fetchAuditLogs(5);
             await fetchCertStatus();
+
+            // Handle auto-refresh initialization
+            const savedInterval = getCookie('amg_refresh_interval');
+            const select = document.getElementById('auto-refresh-select');
+            if (savedInterval !== null) {
+                select.value = savedInterval;
+            } else {
+                select.value = "5000"; // Default 5s
+            }
+            updateRefreshInterval();
         }
 
         async function fetchSummary() {
