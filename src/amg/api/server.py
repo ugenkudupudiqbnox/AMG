@@ -1,7 +1,9 @@
 """FastAPI server for Agent Memory Governance."""
 
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from datetime import datetime, timedelta
 from uuid import uuid4
@@ -156,6 +158,15 @@ def create_app():
         description="REST API for deterministic, auditable agent memory",
         version="1.0.0",
     )
+
+    # Initialize templates
+    template_dir = os.path.join(os.path.dirname(__file__), "templates")
+    templates = Jinja2Templates(directory=template_dir)
+
+    @app.get("/ui", response_class=HTMLResponse)
+    def render_dashboard(request: Request):
+        """Render management UI dashboard."""
+        return templates.TemplateResponse("dashboard.html", {"request": request})
 
     @app.get("/")
     def read_root(authenticated_agent_id: str = Depends(verify_api_key)):
