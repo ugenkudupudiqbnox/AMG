@@ -106,8 +106,9 @@ AMG now includes a built-in management dashboard for real-time governance:
 ### 3. Manual Getting Started
 1. **Read**: [README.md](./README.md) (this file)
 2. **Learn**: [docs/INDEX.md](./docs/INDEX.md) - Full documentation hub
-3. **Deploy**: [docs/deployment/](./docs/deployment/) - Setup guides
-4. **Monitor**: [docs/dashboards/](./docs/dashboards/) - Grafana setup
+3. **Explore**: [examples/](./examples/) - Review [Basic Agent](./examples/basic_agent.py) and [LangGraph Integration](./examples/langgraph_integration.py)
+4. **Deploy**: [docs/deployment/](./docs/deployment/) - Setup guides
+5. **Monitor**: [docs/dashboards/](./docs/dashboards/) - Grafana setup
 
 ### File Locations
 - **Setup Scripts**: `scripts/` - Run deployment automation
