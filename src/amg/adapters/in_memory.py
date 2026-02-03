@@ -234,6 +234,7 @@ class InMemoryStorageAdapter(StorageAdapter):
     def get_audit_log(self, agent_id: Optional[str] = None,
                       start_time: Optional[datetime] = None,
                       end_time: Optional[datetime] = None,
+                      operation: Optional[str] = None,
                       limit: int = 100,
                       offset: int = 0) -> List[AuditRecord]:
         """Retrieve audit log with optional filtering."""
@@ -247,6 +248,9 @@ class InMemoryStorageAdapter(StorageAdapter):
 
         if end_time:
             results = [r for r in results if r.timestamp <= end_time]
+
+        if operation:
+            results = [r for r in results if r.operation == operation]
 
         # Sort by timestamp DESC and apply limit/offset
         results.sort(key=lambda x: x.timestamp, reverse=True)

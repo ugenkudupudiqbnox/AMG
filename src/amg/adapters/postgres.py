@@ -356,7 +356,8 @@ class PostgresStorageAdapter(StorageAdapter):
             self._close_conn(conn)
 
     def get_audit_log(self, agent_id: Optional[str] = None, start_time: Optional[datetime] = None,
-                     end_time: Optional[datetime] = None, limit: int = 100, offset: int = 0) -> List[AuditRecord]:
+                     end_time: Optional[datetime] = None, operation: Optional[str] = None,
+                     limit: int = 100, offset: int = 0) -> List[AuditRecord]:
         """Retrieve audit log."""
         conn = self._get_conn()
         cursor = conn.cursor()
@@ -376,6 +377,10 @@ class PostgresStorageAdapter(StorageAdapter):
             if end_time:
                 where_clauses.append("timestamp <= ?")
                 params.append(end_time.isoformat())
+
+            if operation:
+                where_clauses.append("operation = ?")
+                params.append(operation)
 
             where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
             cursor.execute(f"SELECT * FROM audit_log WHERE {where_sql} ORDER BY timestamp DESC LIMIT ? OFFSET ?", params + [limit, offset])

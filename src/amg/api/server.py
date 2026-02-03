@@ -443,13 +443,10 @@ def create_app():
                 agent_id=agent_id, 
                 start_time=start, 
                 end_time=end, 
+                operation=operation,
                 limit=limit,
                 offset=offset
             )
-            
-            # Filter by operation if provided (still needed if storage doesn't support it)
-            if operation:
-                logs = [log for log in logs if (log.operation if hasattr(log, "operation") else None) == operation]
             
             return {
                 "count": len(logs),
@@ -746,11 +743,12 @@ def create_app():
         """Raw audit logs for Grafana table view."""
         storage = get_storage()
         try:
-            logs = storage.get_audit_log(agent_id=agent_id, limit=limit, offset=offset)
-            
-            # Additional filter for operation if storage doesn't support it directly
-            if operation:
-                logs = [log for log in logs if (log.operation if hasattr(log, "operation") else None) == operation]
+            logs = storage.get_audit_log(
+                agent_id=agent_id, 
+                operation=operation, 
+                limit=limit, 
+                offset=offset
+            )
                 
             results = []
             for log in logs:
