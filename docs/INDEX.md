@@ -17,7 +17,6 @@
 - **[Architecture Overview](./architecture/ARCHITECTURE.md)** - High-level system design
 - **[Implementation Details](./architecture/IMPLEMENTATION.md)** - Core implementation patterns
 - **[Policy Schema](./governance/POLICY_SCHEMA.md)** - Governance contract definitions
-- **[Governance Model](../GOVERNANCE_MODEL.md)** - Decision principles and policies
 - **[Threat Model](./governance/THREAT_MODEL.md)** - Security analysis and risks
 
 ### Deployment & Infrastructure
