@@ -460,11 +460,20 @@
         function refreshCurrentTab() {
             const activeTab = document.querySelector('.nav-link.active');
             if (activeTab) {
-                activeTab.click();
+                const onclick = activeTab.getAttribute('onclick') || '';
+                if (onclick.includes('dashboard')) {
+                    fetchSummary();
+                    fetchAuditLogs(5);
+                } else if (onclick.includes('agents')) {
+                    fetchAgents();
+                } else if (onclick.includes('audit')) {
+                    fetchAuditLogs();
+                } else if (onclick.includes('policies')) {
+                    fetchPolicies();
+                }
             } else {
-                // Default to first load behavior
-                fetchDashboardStats();
-                fetchAuditLogs(10);
+                fetchSummary();
+                fetchAuditLogs(5);
             }
         }
 
@@ -501,6 +510,11 @@
             document.querySelectorAll('.sidebar .nav-link').forEach(el => el.classList.remove('active'));
             document.querySelector(`.sidebar .nav-link[onclick*="${tabName}"]`).classList.add('active');
 
+            if (tabName === 'dashboard') {
+                fetchSummary();
+                fetchAuditLogs(5);
+                fetchCertStatus();
+            }
             if (tabName === 'agents') fetchAgents();
             if (tabName === 'audit') fetchAuditLogs();
             if (tabName === 'policies') fetchPolicies();
