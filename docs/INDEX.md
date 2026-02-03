@@ -16,6 +16,7 @@
 ### Architecture & Design
 - **[Architecture Overview](./architecture/ARCHITECTURE.md)** - High-level system design
 - **[Implementation Details](./architecture/IMPLEMENTATION.md)** - Core implementation patterns
+- **[Governance](./GOVERNANCE.md)** - Governance control model 
 - **[Policy Schema](./governance/POLICY_SCHEMA.md)** - Governance contract definitions
 - **[Threat Model](./governance/THREAT_MODEL.md)** - Security analysis and risks
 
@@ -109,7 +110,7 @@ docs/
 ### For Developers
 1. Study [Architecture](./architecture/ARCHITECTURE.md)
 2. Review [Implementation](./architecture/IMPLEMENTATION.md)
-3. Understand [Governance Model](../GOVERNANCE_MODEL.md)
+3. Understand [Governance Model](../GOVERNANCE.md)
 4. Check [Threat Model](./governance/THREAT_MODEL.md)
 5. Contribute: [Contributing Guide](../CONTRIBUTING.md)
 
