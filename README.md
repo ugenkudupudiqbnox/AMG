@@ -100,7 +100,7 @@ This script automatically:
 ### 2. Management UI
 AMG now includes a built-in management dashboard for real-time governance:
 - **URL**: `https://<your-domain>/ui`
-- **Features**: Audit explorer, Agent kill switches, Memory distribution charts, and Policy transparency.
+- **Features**: Audit explorer, Agent kill switches, Global system shutdown, Memory distribution charts, and Policy transparency.
 - **Authentication**: Requires a valid operator API key.
 
 ### 3. Manual Getting Started
@@ -318,6 +318,7 @@ POST /memory/query      # Query memories with filters
 POST /context/build     # Build governed LLM context
 GET  /audit/{id}        # Retrieve audit trail
 POST /agent/disable     # Instant kill switch
+POST /system/shutdown   # Global emergency shutdown
 ```
 
 No SDK lock-in.
