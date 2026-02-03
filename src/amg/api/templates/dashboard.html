@@ -464,17 +464,15 @@
                 const onclick = activeTab.getAttribute('onclick') || '';
                 if (onclick.includes('dashboard')) {
                     fetchSummary();
-                    fetchAuditLogs(5);
+                    fetchAuditLogs(5, true);
                 } else if (onclick.includes('agents')) {
-                    fetchAgents();
+                    fetchAgents(true);
                 } else if (onclick.includes('audit')) {
-                    fetchAuditLogs();
-                } else if (onclick.includes('policies')) {
-                    fetchPolicies();
+                    fetchAuditLogs(null, true);
                 }
             } else {
                 fetchSummary();
-                fetchAuditLogs(5);
+                fetchAuditLogs(5, true);
             }
         }
 
@@ -601,32 +599,32 @@
 
                 // Recent activity list
                 const list = document.getElementById('recent-activity-list');
-                list.innerHTML = '';
+                let listHtml = '';
                 activity.top_agents.forEach(agent => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item d-flex justify-content-between align-items-center px-0';
-                    li.innerHTML = `
-                        <div>
-                            <div class="fw-bold">${agent.agent_id}</div>
-                            <div class="small text-muted">Last: ${new Date(agent.last_activity).toLocaleString()}</div>
-                        </div>
-                        <span class="badge bg-light text-dark rounded-pill">${agent.operations_count} ops</span>
+                    listHtml += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <div class="fw-bold">${agent.agent_id}</div>
+                                <div class="small text-muted">Last: ${new Date(agent.last_activity).toLocaleString()}</div>
+                            </div>
+                            <span class="badge bg-light text-dark rounded-pill">${agent.operations_count} ops</span>
+                        </li>
                     `;
-                    list.appendChild(li);
                 });
+                list.innerHTML = listHtml;
             }
         }
 
         let auditOffset = 0;
 
-        async function fetchAuditLogs(limitOverride = null) {
+        async function fetchAuditLogs(limitOverride = null, quiet = false) {
             const limit = limitOverride || document.getElementById('filter-limit').value;
             const agentId = document.getElementById('filter-agent') ? document.getElementById('filter-agent').value : '';
             const operation = document.getElementById('filter-op') ? document.getElementById('filter-op').value : '';
             const offset = limitOverride ? 0 : auditOffset;
             
             // Show progress bar
-            if (!limitOverride) {
+            if (!limitOverride && !quiet) {
                 document.getElementById('audit-progress').classList.remove('d-none');
             }
 
@@ -637,7 +635,7 @@
             const data = await apiFetch(url);
             
             // Hide progress bar
-            if (!limitOverride) {
+            if (!limitOverride && !quiet) {
                 document.getElementById('audit-progress').classList.add('d-none');
             }
 
@@ -646,24 +644,25 @@
             const target = limitOverride ? 'home-audit-tbody' : 'audit-logs-tbody';
             const tbody = document.getElementById(target);
             if (!tbody) return;
-            tbody.innerHTML = '';
 
             if (data.logs.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No records found</td></tr>`;
             } else {
+                let html = '';
                 data.logs.forEach(log => {
-                    const tr = document.createElement('tr');
                     const decisionClass = log.decision === 'allowed' ? 'text-success' : 'text-danger fw-bold';
-                    tr.innerHTML = `
-                        <td class="small text-muted">${new Date(log.timestamp).toLocaleTimeString()}</td>
-                        <td class="small fw-bold">${log.agent_id}</td>
-                        <td><span class="badge bg-light text-dark border">${log.operation}</span></td>
-                        <td class="${decisionClass}">${log.decision}</td>
-                        <td class="small text-muted">${log.reason}</td>
-                        <td class="small text-muted font-monospace">${log.request_id ? log.request_id.substring(0,8) : '...'}</td>
+                    html += `
+                        <tr>
+                            <td class="small text-muted">${new Date(log.timestamp).toLocaleTimeString()}</td>
+                            <td class="small fw-bold">${log.agent_id}</td>
+                            <td><span class="badge bg-light text-dark border">${log.operation}</span></td>
+                            <td class="${decisionClass}">${log.decision}</td>
+                            <td class="small text-muted">${log.reason}</td>
+                            <td class="small text-muted font-monospace">${log.request_id ? log.request_id.substring(0,8) : '...'}</td>
+                        </tr>
                     `;
-                    tbody.appendChild(tr);
                 });
+                tbody.innerHTML = html;
             }
 
             // Update pagination UI if it's the explorer
@@ -687,50 +686,50 @@
             fetchAuditLogs();
         }
 
-        async function fetchAgents() {
+        async function fetchAgents(quiet = false) {
             const progress = document.getElementById('agents-progress');
-            if (progress) progress.classList.remove('d-none');
+            if (progress && !quiet) progress.classList.remove('d-none');
             
             const config = await apiFetch('/config/agents');
             
-            if (progress) progress.classList.add('d-none');
+            if (progress && !quiet) progress.classList.add('d-none');
             const grid = document.getElementById('agents-grid');
             if (!config) return;
 
-            grid.innerHTML = '';
+            let html = '';
             config.agents.forEach(agent => {
-                const div = document.createElement('div');
-                div.className = 'col-md-4';
                 let statusColor = 'success';
                 if (agent.state === 'disabled') statusColor = 'danger';
                 if (agent.state === 'frozen') statusColor = 'warning';
                 
-                div.innerHTML = `
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-3">
-                                <h5 class="fw-bold m-0">${agent.agent_id}</h5>
-                                <span class="badge bg-${statusColor}">${agent.state}</span>
-                            </div>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-danger btn-sm" onclick="agentAction('${agent.agent_id}', 'disable')">Disable Agent</button>
-                                <button class="btn btn-outline-warning btn-sm" onclick="agentAction('${agent.agent_id}', 'freeze')">Freeze Writes</button>
-                                <button class="btn btn-outline-success btn-sm" onclick="agentAction('${agent.agent_id}', 'enable')">Enable/Reset</button>
+                html += `
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <h5 class="fw-bold m-0">${agent.agent_id}</h5>
+                                    <span class="badge bg-${statusColor}">${agent.state}</span>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-danger btn-sm" onclick="agentAction('${agent.agent_id}', 'disable')">Disable Agent</button>
+                                    <button class="btn btn-outline-warning btn-sm" onclick="agentAction('${agent.agent_id}', 'freeze')">Freeze Writes</button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="agentAction('${agent.agent_id}', 'enable')">Enable/Reset</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 `;
-                grid.appendChild(div);
             });
+            grid.innerHTML = html;
         }
 
-        async function fetchPolicies() {
+        async function fetchPolicies(quiet = false) {
             const progress = document.getElementById('policies-progress');
-            if (progress) progress.classList.remove('d-none');
+            if (progress && !quiet) progress.classList.remove('d-none');
             
             const policies = await apiFetch('/config/policies');
             
-            if (progress) progress.classList.add('d-none');
+            if (progress && !quiet) progress.classList.add('d-none');
             const target = document.getElementById('policies-content');
             if (!policies) return;
 
