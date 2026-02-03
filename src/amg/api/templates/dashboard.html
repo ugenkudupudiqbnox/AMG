@@ -309,6 +309,10 @@
                         </div>
                     </div>
                     
+                    <div id="agents-progress" class="progress d-none mb-3" style="height: 4px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+
                     <div class="row g-3" id="agents-grid">
                         <!-- Agent Card Placeholder -->
                         <div class="col-12 text-center py-5 text-muted">Loading agent list...</div>
@@ -350,6 +354,9 @@
                         </div>
                     </div>
                     <div class="card mb-4">
+                        <div id="audit-progress" class="progress d-none" style="height: 4px; border-radius: 0;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                        </div>
                         <div class="card-body p-0">
                             <div class="table-responsive audit-table-container">
                                 <table class="table table-hover table-sm mb-0">
@@ -384,6 +391,9 @@
                 <!-- Policies Tab -->
                 <div id="content-policies" class="p-4 tab-content d-none">
                     <h3 class="fw-bold mb-4">Governance Policies</h3>
+                    <div id="policies-progress" class="progress d-none mb-3" style="height: 4px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
                     <div id="policies-content">
                         <!-- Polices will be loaded here -->
                         <div class="text-center py-5 text-muted">Loading active policies...</div>
@@ -532,11 +542,22 @@
             const operation = document.getElementById('filter-op') ? document.getElementById('filter-op').value : '';
             const offset = limitOverride ? 0 : auditOffset;
             
+            // Show progress bar
+            if (!limitOverride) {
+                document.getElementById('audit-progress').classList.remove('d-none');
+            }
+
             let url = `/stats/audit-logs?limit=${limit}&offset=${offset}`;
             if (!limitOverride && agentId) url += `&agent_id=${agentId}`;
             if (!limitOverride && operation) url += `&operation=${operation}`;
 
             const data = await apiFetch(url);
+            
+            // Hide progress bar
+            if (!limitOverride) {
+                document.getElementById('audit-progress').classList.add('d-none');
+            }
+
             if (!data) return;
 
             const target = limitOverride ? 'home-audit-tbody' : 'audit-logs-tbody';
@@ -584,7 +605,12 @@
         }
 
         async function fetchAgents() {
+            const progress = document.getElementById('agents-progress');
+            if (progress) progress.classList.remove('d-none');
+            
             const config = await apiFetch('/config/agents');
+            
+            if (progress) progress.classList.add('d-none');
             const grid = document.getElementById('agents-grid');
             if (!config) return;
 
@@ -616,7 +642,12 @@
         }
 
         async function fetchPolicies() {
+            const progress = document.getElementById('policies-progress');
+            if (progress) progress.classList.remove('d-none');
+            
             const policies = await apiFetch('/config/policies');
+            
+            if (progress) progress.classList.add('d-none');
             const target = document.getElementById('policies-content');
             if (!policies) return;
 
