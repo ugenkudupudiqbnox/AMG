@@ -30,9 +30,9 @@ Built for auditability, compliance, and deterministic behavior.
 
 **Quick Links:**
 - **[Architecture](./docs/architecture/)** - System design and implementation
-- **[Governance](./GOVERNANCE.md)** - Governance Control Model 
-- **[Policy](./docs/governance/POLICY_SCHEMA.md)** - Policy definitions and threat model
-- **[Threat Model](./docs/governance/THREAT_MODEL.md)** - Policy definitions and threat model
+- **[Governance](./GOVERNANCE.md)** - Governance control model 
+- **[Policy](./docs/governance/POLICY_SCHEMA.md)** - Policy definitions
+- **[Threat Model](./docs/governance/THREAT_MODEL.md)** - Threat model
 - **[Deployment](./docs/deployment/)** - Infrastructure setup guides
 - **[Dashboards](./docs/dashboards/)** - Grafana monitoring and KPIs
 - **[User Guides](./docs/guides/)** - Operator documentation
