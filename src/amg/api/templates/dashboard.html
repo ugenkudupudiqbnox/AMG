@@ -583,28 +583,63 @@
             target.innerHTML = `
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">Memory Retention (Defaults)</div>
+                        <div class="card h-100">
+                            <div class="card-header bg-light fw-bold">TTL Enforcement Rules</div>
                             <div class="card-body">
                                 <table class="table table-sm">
-                                    <thead><tr><th>Type</th><th>TTL (Seconds)</th></tr></thead>
+                                    <thead><tr><th>Condition</th><th>Seconds</th></tr></thead>
                                     <tbody>
-                                        ${Object.entries(policies.default_ttls).map(([k, v]) => `<tr><td>${k}</td><td>${v.toLocaleString()}</td></tr>`).join('')}
+                                        ${Object.entries(policies.ttl_rules).map(([k, v]) => `<tr><td class="small text-muted">${k.replace(/_/g, ' ')}</td><td>${v.toLocaleString()}</td></tr>`).join('')}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">Policy Constraints</div>
+                        <div class="card h-100">
+                            <div class="card-header bg-light fw-bold">Sensitivity Tagging (PII Patterns)</div>
                             <div class="card-body">
-                                <ul class="list-group list-group-flush">
-                                    ${Object.entries(policies.policy_constraints).map(([k, v]) => `<li class="list-group-item d-flex justify-content-between"><span>${k}</span><span class="fw-bold">${v.toLocaleString()}</span></li>`).join('')}
+                                <div class="mb-3">
+                                    <label class="small fw-bold text-danger d-block mb-1">PII Keywords:</label>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        ${policies.sensitivity_tags.pii_patterns.map(p => `<span class="badge bg-danger-subtle text-danger border border-danger-subtle">${p}</span>`).join('')}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="small fw-bold text-success d-block mb-1">Non-PII Keywords:</label>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        ${policies.sensitivity_tags.non_pii_patterns.map(p => `<span class="badge bg-success-subtle text-success border border-success-subtle">${p}</span>`).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light fw-bold">Context Budgeting</div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush small">
+                                    <li class="list-group-item d-flex justify-content-between"><span>Max Tokens</span><span class="fw-bold">${policies.context_budget.max_tokens.toLocaleString()}</span></li>
+                                    <li class="list-group-item d-flex justify-content-between"><span>Max Memory Items</span><span class="fw-bold">${policies.context_budget.max_memory_items}</span></li>
                                 </ul>
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light fw-bold">Isolation Guarantees</div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush small">
+                                    <li class="list-group-item d-flex justify-content-between"><span>Agent Scope Isolation</span><span class="badge bg-success">Non-Bypassable</span></li>
+                                    <li class="list-group-item d-flex justify-content-between"><span>Tenant Scope Isolation</span><span class="badge bg-success">Non-Bypassable</span></li>
+                                    <li class="list-group-item d-flex justify-content-between text-muted"><span>Policy Version</span><span>${policies.policy_version}</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-light-subtle rounded border small text-muted">
+                    <i class="bi bi-info-circle"></i> Policies are read-only in the UI to ensure <strong>Policy-as-Code</strong> integrity. All changes must be deployed via the repository and are audited as configuration changes.
                 </div>
             `;
         }

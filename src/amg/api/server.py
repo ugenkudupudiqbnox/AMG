@@ -12,6 +12,7 @@ import os
 
 from amg.adapters import InMemoryStorageAdapter, PostgresStorageAdapter
 from amg.kill_switch import KillSwitch
+from amg.policy import PolicyEngine
 from amg.context import GovernedContextBuilder, ContextRequest
 from amg.storage import PolicyCheck
 from amg.types import Memory, MemoryPolicy, MemoryType, Sensitivity, Scope, AuditRecord
@@ -851,16 +852,18 @@ def create_app():
         
         Returns policy schema and defaults.
         """
+        engine = PolicyEngine()
+        config = engine.config
+        
         return {
-            "policy_version": "1.0.0",
+            "policy_version": engine.policy_version,
             "memory_types": ["short_term", "long_term", "episodic"],
             "sensitivities": ["pii", "non_pii"],
             "scopes": ["agent", "tenant"],
-            "default_ttls": {
-                "short_term": 0,
-                "long_term": 2592000,  # 30 days
-                "episodic": 604800,    # 7 days
-            },
+            "ttl_rules": config["ttl"],
+            "context_budget": config["context_budget"],
+            "sensitivity_tags": config["sensitivity_tags"],
+            "isolation_guarantees": config["isolation"],
             "policy_constraints": {
                 "min_ttl": 0,
                 "max_ttl": 31536000,  # 1 year
